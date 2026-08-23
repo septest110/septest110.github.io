@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>燕京理工学院 计科专升本 课表</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 10px;
+  color: #333;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  text-align: center;
+}
+.header h1 { font-size: 18px; margin-bottom: 8px; }
+.header .info { font-size: 12px; opacity: 0.9; }
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary { background: #6c757d; }
+
+.btn-success {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: #fff;
+  border: none;
+}
+
+.btn-success:hover {
+  box-shadow: 0 2px 10px rgba(67, 233, 123, 0.4);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #fa709a, #fee140);
+  color: #fff;
+  border: none;
+}
+
+.btn-warning:hover {
+  box-shadow: 0 2px 10px rgba(250, 112, 154, 0.4);
+}
+.week-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.week-selector select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
+}
+.date-display {
+  padding: 10px 16px;
+  background: #e9ecef;
+  font-size: 14px;
+  color: #495057;
+  text-align: center;
+  font-weight: 500;
+}
+.calendar {
+  display: none;
+  padding: 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+}
+.calendar.active { display: block; }
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.calendar-header button {
+  background: #667eea;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+}
+.calendar-title { font-size: 16px; font-weight: 600; }
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.calendar-weekdays div {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  padding: 4px;
+}
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-days .day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  background: white;
+  position: relative;
+}
+.calendar-days .day:hover { border-color: #667eea; }
+.calendar-days .day.has-class::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 5px;
+  height: 5px;
+  background: #28a745;
+  border-radius: 50%;
+}
+.calendar-days .day.other-month { color: #ccc; }
+.calendar-days .day.today { background: #e7f3ff; border-color: #667eea; }
+.calendar-days .day.selected { background: #667eea; color: white; }
+.calendar-days .day.selected.has-class::after { background: white; }
+.calendar-days .day.disabled { cursor: not-allowed; opacity: 0.5; }
+.timetable {
+  padding: 16px;
+}
+.day-view {
+  display: none;
+}
+.day-view.active { display: block; }
+.week-view {
+  display: none;
+}
+.week-view.active { display: block; }
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #667eea;
+  margin: 16px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid #667eea;
+}
+.section-title:first-child { margin-top: 0; }
+.class-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-left: 4px solid #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.class-card .class-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.class-card .class-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+}
+.class-type.required { background: #ffe6e6; color: #d9534f; }
+.class-type.elective { background: #e6f3ff; color: #17a2b8; }
+.class-type.lab { background: #fff3cd; color: #856404; }
+.class-info {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.8;
+}
+.class-info .label { color: #999; font-weight: 500; }
+.class-info .time { color: #667eea; font-weight: 600; }
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+.week-grid {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 8px;
+}
+.time-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.time-slot {
+  height: 80px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #666;
+  border: 1px solid #eee;
+}
+.time-slot .period { font-weight: 600; color: #667eea; font-size: 13px; }
+.days-column {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.day-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.day-header {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #667eea;
+  padding: 4px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+.day-header .date { display: block; font-size: 10px; color: #999; font-weight: normal; }
+.class-block {
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 11px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.class-block:hover { transform: scale(1.02); }
+.class-block .name { font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+.class-block .room { opacity: 0.9; font-size: 10px; }
+.no-class { height: 80px; }
+.view-toggle {
+  display: flex;
+  background: #e9ecef;
+  border-radius: 8px;
+  padding: 4px;
+  margin: 12px;
+}
+.view-toggle button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+.view-toggle button.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+.today-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+  z-index: 100;
+}
+.today-btn:hover { background: #5568d3; }
+@media (max-width: 600px) {
+  body { padding: 0; }
+  .container { border-radius: 0; min-height: 100vh; }
+  .header h1 { font-size: 16px; }
+  .controls { padding: 10px; gap: 6px; }
+  .btn { padding: 6px 12px; font-size: 12px; }
+  .timetable { padding: 12px; }
+  .week-grid { grid-template-columns: 45px 1fr; }
+  .time-slot, .class-block, .no-class { height: 70px; }
+  .class-block { font-size: 10px; }
+  .class-block .name { font-size: 10px; }
+  .class-block .room { font-size: 9px; }
+  .day-header { font-size: 11px; }
+}
+@media (max-width: 420px) {
+  .week-grid { grid-template-columns: 40px 1fr; }
+  .time-slot, .class-block, .no-class { height: 65px; }
+  .class-block { padding: 4px; }
+  .class-block .name { font-size: 9px; }
+  .class-block .room { font-size: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>燕京理工学院 计科（专升本）2602</h1>
+    <div class="info">2026-2027学年第一学期 | 班级人数：30</div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-secondary" onclick="changeDay(-1)" title="前一天">◀ 前一天</button>
+    <button class="btn btn-secondary" onclick="changeDay(1)" title="后一天">后一天 ▶</button>
+    <button class="btn" onclick="toggleCalendar()">📅 选择日期</button>
+    <div class="week-selector">
+      <button class="btn btn-secondary" onclick="changeWeek(-1)">◀</button>
+      <select id="weekSelect" onchange="jumpToWeek(this.value)"></select>
+      <button class="btn btn-secondary" onclick="changeWeek(1)">▶</button>
+    </div>
+    <button class="btn btn-success" onclick="document.getElementById('importFile').click()" title="导入新课表">📥 导入课表</button>
+    <button class="btn btn-warning" onclick="exportSchedule()" title="导出当前课表">📤 导出课表</button>
+    <button class="btn btn-secondary" onclick="resetSchedule()" title="恢复默认课表">🔄 恢复默认</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importSchedule(event)">
+  </div>
+  <div class="view-toggle">
+    <button id="dayViewBtn" class="active" onclick="switchView('day')">每日视图</button>
+    <button id="weekViewBtn" onclick="switchView('week')">周视图</button>
+  </div>
+  <div class="date-display" id="dateDisplay">加载中...</div>
+  <div class="calendar" id="calendar">
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">◀</button>
+      <div class="calendar-title" id="calendarTitle"></div>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <div class="calendar-weekdays">
+      <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+    </div>
+    <div class="calendar-days" id="calendarDays"></div>
+  </div>
+  <div class="timetable">
+    <div class="day-view active" id="dayView"></div>
+    <div class="week-view" id="weekView"></div>
+  </div>
+</div>
+<button class="today-btn" onclick="goToday()" title="回到今天">📍</button>
+
+<script>
+// 配置：开学日期（第1周开始的周一）
+const semesterStart = new Date(2026, 8, 1); // 2026年9月1日（周二）
+// 9月1日是周二，所以第1周的范围是8月31日-9月6日
+// 实际以9月1日为第1周开始
+const weekStartDates = []; // 每周的开始日期（周一）
+// 计算第1周的周一（8月31日）
+const firstWeekMonday = new Date(2026, 7, 31); // 8月31日
+for (let i = 0; i < 20; i++) {
+  const d = new Date(firstWeekMonday);
+  d.setDate(d.getDate() + i * 7);
+  weekStartDates.push(d);
+}
+
+// 时间段定义（大节）
+// 第二大节有两个时间：ABC楼区域(abcTime) 10:15-11:50，其他区域(time) 10:30-12:05
+const periods = [
+  { name: '第一大节', range: '1-2小节', time: '08:20-09:55', start: 1, end: 2 },
+  { name: '第二大节', range: '3-4小节', time: '10:30-12:05', abcTime: '10:15-11:50', start: 3, end: 4 },
+  { name: '第三大节', range: '5-6小节', time: '13:30-15:05', start: 5, end: 6 },
+  { name: '第四大节', range: '7-8小节', time: '15:25-17:00', start: 7, end: 8 },
+  { name: '第五大节', range: '9-10小节', time: '18:00-19:35', start: 9, end: 10 },
+  { name: '第六大节', range: '11-12小节', time: '19:50-21:25', start: 11, end: 12 }
+];
+
+// 判断教室是否属于ABC楼区域
+function isABCArea(room) {
+  // ABC楼区域：房间号以A、B、C开头
+  return /^[ABC]/.test(room);
+}
+
+// 获取指定区域的时间段
+function getPeriodTime(period, room) {
+  // 第二大节且是ABC楼区域，使用abcTime
+  if (period.abcTime && isABCArea(room)) {
+    return period.abcTime;
+  }
+  return period.time;
+}
+
+// 课程数据
+// dayOfWeek: 0=周日, 1=周一, 2=周二, 3=周三, 4=周四, 5=周五, 6=周六
+const courses = [
+  // 周一
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408教室' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212教室' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 1, period: 3, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'M203教室' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403教室' },
+  // 周二
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,3,4], room: 'A210（公共机房3）' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211（计算机实训室）' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111（公共机房2）' },
+  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 4, weeks: [1,2,3,4], room: 'K2-404' },
+  // 周三
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509（公共机房5）' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211（计算机实训室）' },
+  // 周四
+  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
+  { name: '计算机网络', type: '实验学时', typeClass: 'lab', day: 4, period: 2, weeks: [8,9,10,11,12,13,14,15], room: 'A207（网络综合实训室）' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [1,2,3,4,6,7,8,9], room: 'K2-514' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12,13], room: 'A411（公共机房6）' },
+  // 周五
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12,13], room: 'K2-314' },
+  // 周六
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 6, period: 1, weeks: [6], room: 'K2-506' },
+  // 周日
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 0, period: 1, weeks: [3], room: 'K2-404' }
+];
+
+const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+let currentDate = new Date();
+currentDate.setHours(0,0,0,0);
+let viewMode = 'day';
+let calendarMonth = currentDate.getMonth();
+let calendarYear = currentDate.getFullYear();
+
+// 初始化
+function init() {
+  initWeekSelector();
+  updateDateDisplay();
+  renderDayView();
+  renderWeekView();
+}
+
+function initWeekSelector() {
+  const select = document.getElementById('weekSelect');
+  for (let i = 1; i <= 20; i++) {
+    const d = weekStartDates[i-1];
+    const end = new Date(d);
+    end.setDate(end.getDate() + 6);
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `第${i}周 (${formatDateShort(d)}-${formatDateShort(end)})`;
+    select.appendChild(opt);
+  }
+  const currentWeek = getWeekNumber(currentDate);
+  select.value = currentWeek;
+}
+
+function getWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  for (let i = 0; i < weekStartDates.length; i++) {
+    const start = weekStartDates[i];
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    if (d >= start && d < end) return i + 1;
+  }
+  return 1;
+}
+
+function formatDate(d) {
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${dayNames[d.getDay()]}`;
+}
+
+function formatDateShort(d) {
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function updateDateDisplay() {
+  const week = getWeekNumber(currentDate);
+  document.getElementById('dateDisplay').textContent = 
+    `${formatDate(currentDate)} | 第${week}周`;
+}
+
+function renderDayView() {
+  const container = document.getElementById('dayView');
+  const dayOfWeek = currentDate.getDay();
+  const weekNum = getWeekNumber(currentDate);
+  
+  if (currentDate < weekStartDates[0] || currentDate >= weekStartDates[19]) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📚</div><p>不在学期范围内</p></div>';
+    return;
+  }
+  
+  const dayCourses = courses.filter(c => 
+    c.day === dayOfWeek && c.weeks.includes(weekNum)
+  );
+  
+  // 按大节分组
+  const groupedCourses = periods.map((p, index) => {
+    return {
+      period: p,
+      courses: dayCourses.filter(c => c.period === index + 1)
+    };
+  });
+  
+  let html = '';
+  groupedCourses.forEach(g => {
+    if (g.courses.length > 0) {
+      // 检查该大节是否有ABC楼和非ABC楼的课程
+      const hasABCCourse = g.courses.some(c => isABCArea(c.room));
+      const hasNonABCCourse = g.courses.some(c => !isABCArea(c.room));
+      let titleTime = g.period.time;
+      if (hasABCCourse && hasNonABCCourse && g.period.abcTime) {
+        titleTime = `${g.period.time} / ABC楼:${g.period.abcTime}`;
+      } else if (hasABCCourse && g.period.abcTime) {
+        titleTime = g.period.abcTime;
+      }
+      html += `<div class="section-title">${g.period.name}（${g.period.range}） ${titleTime}</div>`;
+      g.courses.forEach(c => {
+        const courseTime = getPeriodTime(g.period, c.room);
+        html += `
+          <div class="class-card">
+            <div class="class-name">
+              ${c.name}
+              <span class="class-type ${c.typeClass}">${c.type}</span>
+            </div>
+            <div class="class-info">
+              <div><span class="label">时间：</span><span class="time">${courseTime}</span> (${g.period.range})</div>
+              <div><span class="label">地点：</span>${c.room}</div>
+              <div><span class="label">周次：</span>第${weekNum}周</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+  });
+  
+  if (!html) {
+    html = '<div class="empty-state"><div class="icon">🎉</div><p>今天没有课，好好休息吧！</p></div>';
+  }
+  
+  container.innerHTML = html;
+}
+
+function renderWeekView() {
+  const container = document.getElementById('weekView');
+  const weekNum = getWeekNumber(currentDate);
+  const weekStart = weekStartDates[weekNum - 1];
+  
+  if (currentDate < weekStartDates[0] || currentDate >= weekStartDates[19]) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📚</div><p>不在学期范围内</p></div>';
+    return;
+  }
+  
+  let html = '<div class="week-grid">';
+  
+  // 时间列
+  html += '<div class="time-column">';
+  periods.forEach(p => {
+    // 第二大节有两个时间，显示两个
+    let timeText = p.time;
+    if (p.abcTime) {
+      timeText = `${p.time}<br><span style="font-size:0.8em;color:#888">ABC楼:${p.abcTime}</span>`;
+    }
+    html += `<div class="time-slot"><div class="period">${p.name}</div><div>${timeText}</div></div>`;
+  });
+  html += '</div>';
+  
+  // 日期列
+  html += '<div class="days-column">';
+  for (let day = 0; day < 7; day++) {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + day);
+    const dayOfWeek = d.getDay();
+    
+    html += '<div class="day-column">';
+    html += `<div class="day-header">${dayNames[dayOfWeek]}<span class="date">${d.getMonth()+1}/${d.getDate()}</span></div>`;
+    
+    periods.forEach((p, index) => {
+      const dayCourses = courses.filter(c => 
+        c.day === dayOfWeek && c.weeks.includes(weekNum) && c.period === index + 1
+      );
+      
+      if (dayCourses.length > 0) {
+        dayCourses.forEach(c => {
+          const courseTime = getPeriodTime(p, c.room);
+          html += `<div class="class-block" onclick="showCourseDetail('${c.name}','${c.room}','${courseTime}','${dayNames[dayOfWeek]}')">
+            <div class="name">${c.name}</div>
+            <div class="room">${c.room}</div>
+          </div>`;
+        });
+      } else {
+        html += '<div class="no-class"></div>';
+      }
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+function showCourseDetail(name, room, time, day) {
+  alert(`课程：${name}\n时间：${day} ${time}\n地点：${room}`);
+}
+
+function switchView(mode) {
+  viewMode = mode;
+  document.getElementById('dayView').classList.toggle('active', mode === 'day');
+  document.getElementById('weekView').classList.toggle('active', mode === 'week');
+  document.getElementById('dayViewBtn').classList.toggle('active', mode === 'day');
+  document.getElementById('weekViewBtn').classList.toggle('active', mode === 'week');
+}
+
+function toggleCalendar() {
+  const cal = document.getElementById('calendar');
+  cal.classList.toggle('active');
+  if (cal.classList.contains('active')) {
+    renderCalendar();
+  }
+}
+
+function hideCalendar() {
+  document.getElementById('calendar').classList.remove('active');
+}
+
+function renderCalendar() {
+  document.getElementById('calendarTitle').textContent = `${calendarYear}年${calendarMonth+1}月`;
+  const firstDay = new Date(calendarYear, calendarMonth, 1);
+  const lastDay = new Date(calendarYear, calendarMonth+1, 0);
+  const startDay = firstDay.getDay();
+  const totalDays = lastDay.getDate();
+  
+  const container = document.getElementById('calendarDays');
+  container.innerHTML = '';
+  
+  // 上月填充
+  const prevMonthLastDay = new Date(calendarYear, calendarMonth, 0).getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
+    const day = document.createElement('div');
+    day.className = 'day other-month';
+    day.textContent = prevMonthLastDay - i;
+    day.classList.add('disabled');
+    container.appendChild(day);
+  }
+  
+  // 本月
+  for (let i = 1; i <= totalDays; i++) {
+    const day = document.createElement('div');
+    day.className = 'day';
+    day.textContent = i;
+    const date = new Date(calendarYear, calendarMonth, i);
+    date.setHours(0,0,0,0);
+    
+    const dayOfWeek = date.getDay();
+    const weekNum = getWeekNumber(date);
+    const hasClass = courses.some(c => 
+      c.day === dayOfWeek && c.weeks.includes(weekNum)
+    );
+    
+    if (hasClass) day.classList.add('has-class');
+    if (date.getTime() === currentDate.getTime()) day.classList.add('selected');
+    
+    if (date < weekStartDates[0] || date >= weekStartDates[19]) {
+      day.classList.add('disabled');
+    } else {
+      day.onclick = () => {
+        currentDate = date;
+        updateDateDisplay();
+        renderDayView();
+        renderWeekView();
+        const weekSelect = document.getElementById('weekSelect');
+        weekSelect.value = getWeekNumber(date);
+        hideCalendar(); // 选择后隐藏日历
+      };
+    }
+    
+    if (date.getTime() === new Date().setHours(0,0,0,0) && !day.classList.contains('selected')) {
+      day.classList.add('today');
+    }
+    
+    container.appendChild(day);
+  }
+  
+  // 下月填充
+  const totalCells = startDay + totalDays;
+  const remaining = (7 - totalCells % 7) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    const day = document.createElement('div');
+    day.className = 'day other-month';
+    day.textContent = i;
+    day.classList.add('disabled');
+    container.appendChild(day);
+  }
+}
+
+function changeMonth(delta) {
+  calendarMonth += delta;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
+}
+
+function changeWeek(delta) {
+  const weekSelect = document.getElementById('weekSelect');
+  let week = parseInt(weekSelect.value) + delta;
+  if (week < 1) week = 1;
+  if (week > 20) week = 20;
+  jumpToWeek(week);
+}
+
+function changeDay(delta) {
+  currentDate.setDate(currentDate.getDate() + delta);
+  updateDateDisplay();
+  renderDayView();
+  renderWeekView();
+  // 同步周次选择器
+  const week = getWeekNumber(currentDate);
+  if (week >= 1 && week <= 20) {
+    document.getElementById('weekSelect').value = week;
+  }
+}
+
+function jumpToWeek(week) {
+  currentDate = new Date(weekStartDates[week - 1]);
+  updateDateDisplay();
+  renderDayView();
+  renderWeekView();
+  document.getElementById('weekSelect').value = week;
+}
+
+function goToday() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (today >= weekStartDates[0] && today < weekStartDates[19]) {
+    currentDate = today;
+    updateDateDisplay();
+    renderDayView();
+    renderWeekView();
+    document.getElementById('weekSelect').value = getWeekNumber(today);
+    hideCalendar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    alert('今天不在学期范围内');
+  }
+}
+
+// ============ 课表导入/导出功能 ============
+
+// 默认课表数据（用于恢复）
+const defaultCourses = [
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408教室' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212教室' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 1, period: 3, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'M203教室' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403教室' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,3,4], room: 'A210（公共机房3）' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211（计算机实训室）' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111（公共机房2）' },
+  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 4, weeks: [1,2,3,4], room: 'K2-404' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509（公共机房5）' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211（计算机实训室）' },
+  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
+  { name: '计算机网络', type: '实验学时', typeClass: 'lab', day: 4, period: 2, weeks: [8,9,10,11,12,13,14,15], room: 'A207（网络综合实训室）' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [1,2,3,4,6,7,8,9], room: 'K2-514' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12,13], room: 'A411（公共机房6）' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12,13], room: 'K2-314' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 6, period: 1, weeks: [6], room: 'K2-506' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 0, period: 1, weeks: [3], room: 'K2-404' }
+];
+
+// 从localStorage加载已保存的课表
+function loadSavedSchedule() {
+  const saved = localStorage.getItem('customSchedule');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      if (data && Array.isArray(data.courses)) {
+        // 更新全局课程数据
+        for (let key in data) {
+          if (key === 'courses') continue;
+          if (key === 'semesterStart' || key === 'firstWeekMonday') {
+            // 日期需要特殊处理
+            if (key === 'semesterStart') {
+              semesterStart.setTime(new Date(data[key]).getTime());
+            } else if (key === 'firstWeekMonday') {
+              firstWeekMonday.setTime(new Date(data[key]).getTime());
+              // 重新计算周起始日期
+              weekStartDates.length = 0;
+              for (let i = 0; i < 20; i++) {
+                const d = new Date(firstWeekMonday);
+                d.setDate(d.getDate() + i * 7);
+                weekStartDates.push(d);
+              }
+            }
+          } else if (window[key] !== undefined) {
+            window[key] = data[key];
+          }
+        }
+        return data.courses;
+      }
+    } catch(e) {
+      console.error('加载课表失败:', e);
+    }
+  }
+  return null;
+}
+
+// 导出课表
+function exportSchedule() {
+  const exportData = {
+    title: document.querySelector('.header h1').textContent,
+    info: document.querySelector('.header .info').textContent,
+    semesterStart: semesterStart.toISOString(),
+    firstWeekMonday: firstWeekMonday.toISOString(),
+    periods: periods,
+    courses: courses
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `课表_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 导入课表
+function importSchedule(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      // 验证数据格式
+      if (!Array.isArray(data.courses)) {
+        alert('导入失败：缺少courses数组');
+        return;
+      }
+      
+      // 验证每门课程的必要字段
+      for (let i = 0; i < data.courses.length; i++) {
+        const c = data.courses[i];
+        if (!c.name || c.day === undefined || c.period === undefined || !c.weeks) {
+          alert(`导入失败：第${i+1}门课程数据不完整`);
+          return;
+        }
+      }
+      
+      // 确认导入
+      if (!confirm(`检测到 ${data.courses.length} 门课程，是否导入？\n（会覆盖当前课表）`)) {
+        return;
+      }
+      
+      // 应用导入的数据
+      if (data.title) {
+        document.querySelector('.header h1').textContent = data.title;
+      }
+      if (data.info) {
+        document.querySelector('.header .info').textContent = data.info;
+      }
+      
+      // 更新时间段（转换格式）
+      if (Array.isArray(data.periods) && data.periods.length > 0) {
+        periods.length = 0;
+        data.periods.forEach((p, index) => {
+          // 兼容两种格式：start/end字符串 或 time字段
+          let timeStr = p.time || '';
+          let startEnd = '';
+          if (!timeStr && p.start && p.end) {
+            timeStr = `${p.start}-${p.end}`;
+            // 从名称中提取小节范围，如 "1-2节" -> range: "1-2小节"
+            startEnd = p.name.replace(/节/g, '小节');
+          } else {
+            startEnd = p.range || `${p.start}-${p.end}`;
+          }
+          periods.push({
+            name: p.name || `第${index + 1}大节`,
+            range: startEnd,
+            time: timeStr,
+            start: p.start && typeof p.start === 'number' ? p.start : (index * 2 + 1),
+            end: p.end && typeof p.end === 'number' ? p.end : (index * 2 + 2),
+            abcTime: p.abcTime || undefined
+          });
+        });
+      }
+      
+      // 更新日期配置
+      if (data.firstWeekMonday) {
+        firstWeekMonday.setTime(new Date(data.firstWeekMonday).getTime());
+        weekStartDates.length = 0;
+        for (let i = 0; i < 20; i++) {
+          const d = new Date(firstWeekMonday);
+          d.setDate(d.getDate() + i * 7);
+          weekStartDates.push(d);
+        }
+      }
+      if (data.semesterStart) {
+        semesterStart.setTime(new Date(data.semesterStart).getTime());
+      }
+      
+      // 更新课程数据
+      courses.length = 0;
+      data.courses.forEach(c => courses.push(c));
+      
+      // 保存到localStorage
+      const saveData = {
+        semesterStart: semesterStart.toISOString(),
+        firstWeekMonday: firstWeekMonday.toISOString(),
+        periods: periods,
+        courses: courses
+      };
+      localStorage.setItem('customSchedule', JSON.stringify(saveData));
+      
+      // 重新初始化视图
+      const weekSelect = document.getElementById('weekSelect');
+      weekSelect.innerHTML = '';
+      initWeekSelector();
+      updateDateDisplay();
+      renderDayView();
+      renderWeekView();
+      renderCalendar();
+      
+      alert('课表导入成功！');
+    } catch(err) {
+      alert('导入失败：' + err.message);
+      console.error(err);
+    }
+    // 清空文件选择
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// 恢复默认课表
+function resetSchedule() {
+  if (!confirm('确定要恢复到默认课表吗？\n（所有自定义修改将丢失）')) {
+    return;
+  }
+  localStorage.removeItem('customSchedule');
+  
+  // 恢复默认配置
+  const defaultSemesterStart = new Date(2026, 8, 1);
+  const defaultFirstWeekMonday = new Date(2026, 7, 31);
+  
+  semesterStart.setTime(defaultSemesterStart.getTime());
+  firstWeekMonday.setTime(defaultFirstWeekMonday.getTime());
+  
+  weekStartDates.length = 0;
+  for (let i = 0; i < 20; i++) {
+    const d = new Date(firstWeekMonday);
+    d.setDate(d.getDate() + i * 7);
+    weekStartDates.push(d);
+  }
+  
+  // 恢复默认课程
+  courses.length = 0;
+  defaultCourses.forEach(c => courses.push(c));
+  
+  // 更新标题
+  document.querySelector('.header h1').textContent = '燕京理工学院 计科（专升本）2602';
+  document.querySelector('.header .info').textContent = '2026-2027学年第一学期 | 班级人数：30';
+  
+  // 重新渲染
+  const weekSelect = document.getElementById('weekSelect');
+  weekSelect.innerHTML = '';
+  initWeekSelector();
+  updateDateDisplay();
+  renderDayView();
+  renderWeekView();
+  renderCalendar();
+  
+  alert('已恢复到默认课表');
+}
+
+// 页面加载时检查是否有保存的课表
+const savedCourses = loadSavedSchedule();
+if (savedCourses && savedCourses.length > 0) {
+  courses.length = 0;
+  savedCourses.forEach(c => courses.push(c));
+}
+
+// 键盘快捷键支持
+document.addEventListener('keydown', function(e) {
+  // 避免在输入框中触发
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+    return;
+  }
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    changeDay(-1);
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    changeDay(1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    changeWeek(-1);
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    changeWeek(1);
+  }
+});
+
+init();
+</script>
+</body>
+</html>
