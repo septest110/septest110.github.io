@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>积分制生活规划 · 手账本</title>
+<style>
+  :root {
+    --background: hsl(40 30% 96%);
+    --foreground: hsl(25 15% 25%);
+    --card: hsl(0 0% 100%);
+    --primary: hsl(120 25% 55%);
+    --primary-foreground: hsl(0 0% 100%);
+    --primary-light: hsl(120 30% 93%);
+    --primary/10: hsl(120 25% 55% / 0.1);
+    --primary/20: hsl(120 25% 55% / 0.2);
+    --primary/40: hsl(120 25% 55% / 0.4);
+    --primary/60: hsl(120 25% 55% / 0.6);
+    --primary/80: hsl(120 25% 55% / 0.8);
+    --secondary: hsl(20 60% 85%);
+    --secondary-foreground: hsl(20 40% 30%);
+    --secondary-light: hsl(20 60% 92%);
+    --muted: hsl(40 20% 92%);
+    --muted-foreground: hsl(25 8% 50%);
+    --border: hsl(30 15% 88%);
+    --destructive: hsl(0 70% 60%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, hsl(120 25% 55% / 0.05), hsl(40 30% 96%), hsl(20 60% 85% / 0.1));
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.375rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s ease; border: none; outline: none;
+    white-space: nowrap; font-family: inherit;
+  }
+  .btn:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(0.95); }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-outline { background: white; border: 1px solid var(--border); color: var(--foreground); }
+  .btn-outline:hover:not(:disabled) { background: var(--muted); }
+  .btn-ghost { background: transparent; color: var(--foreground); }
+  .btn-ghost:hover:not(:disabled) { background: var(--muted); }
+  .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; }
+  .btn-sm { height: 2rem; font-size: 0.75rem; padding: 0 0.75rem; }
+  .card {
+    background: white; border: 1px solid hsl(30 15% 88% / 0.6);
+    border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .card-header { padding: 1rem 1.25rem 0.75rem; }
+  .card-title { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+  .card-body { padding: 1.25rem; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-40px) scale(1.2); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+  .animate-fade-in-up { animation: fadeInUp 0.5s ease-out both; }
+  .hero-banner {
+    background: linear-gradient(135deg, var(--primary/20), hsl(120 25% 55% / 0.05), var(--secondary));
+    border-radius: 1rem; padding: 2.5rem 1.5rem; text-align: center;
+    margin-bottom: 1.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+    position: relative;
+  }
+  .hero-banner .nav-btn {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    background: rgba(255,255,255,0.6);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .hero-banner .nav-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .hero-emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .hero-title { font-size: 1.25rem; font-weight: 700; }
+  .hero-subtitle { font-size: 0.875rem; color: var(--muted-foreground); margin-top: 0.5rem; }
+  .points-total-card {
+    background: linear-gradient(135deg, var(--primary/10), white, hsl(20 60% 85% / 0.1));
+    border: 1px solid hsl(30 15% 88% / 0.6); border-radius: 0.75rem;
+    padding: 2rem; text-align: center; margin-bottom: 1rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .points-label {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem; color: var(--muted-foreground); font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  .points-big {
+    font-size: clamp(2.5rem, 8vw, 3.75rem);
+    font-weight: 900; color: var(--primary);
+    letter-spacing: -0.02em; transition: transform 0.3s ease;
+  }
+  .points-unit { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted-foreground); }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .stat-card {
+    display: flex; align-items: center; gap: 0.75rem; padding: 1rem;
+    background: white; border: 1px solid hsl(30 15% 88% / 0.6);
+    border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .stat-icon {
+    width: 2.5rem; height: 2.5rem; border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .stat-icon.earn { background: var(--primary/10); }
+  .stat-icon.spend { background: var(--secondary); }
+  .stat-text { min-width: 0; flex: 1; }
+  .stat-text .label { font-size: 0.75rem; color: var(--muted-foreground); }
+  .stat-text .value {
+    font-size: 1.25rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .date-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.75rem; padding: 0.75rem; background: white;
+    border: 1px solid hsl(30 15% 88% / 0.6); border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .date-info { text-align: center; flex: 1; min-width: 0; }
+  .date-main {
+    display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+    font-size: 1rem; font-weight: 600;
+  }
+  .date-sub { font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.125rem; }
+  .date-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; }
+  .section-title {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .section-title h2 { font-size: 1.125rem; font-weight: 700; flex-shrink: 0; }
+  .section-title .count { font-size: 0.75rem; color: var(--muted-foreground); flex-shrink: 0; }
+  .section-title > *:last-child { margin-left: auto; }
+  /* ============ 响应式布局 ============ */
+  
+  .task-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;
+  }
+  .task-card {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 0.5rem; padding: 1rem; border-radius: 0.75rem;
+    border: 1px solid hsl(30 15% 88% / 0.6); background: white;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); cursor: pointer;
+    text-align: left; font-family: inherit; transition: all 0.15s ease;
+    min-width: 0;
+  }
+  
+  .reward-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;
+  }
+  .reward-card {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.5rem; padding: 1rem; border-radius: 0.75rem;
+    border: 1px solid var(--secondary);
+    background: linear-gradient(135deg, hsl(20 60% 85% / 0.3), white);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+    cursor: pointer; font-family: inherit; text-align: center;
+    transition: all 0.15s ease;
+    min-width: 0;
+  }
+  .task-card:hover:not(:disabled) {
+    transform: translateY(-2px); box-shadow: 0 4px 8px 0 rgb(0 0 0 / 0.06);
+    border-color: hsl(120 25% 75%);
+  }
+  .task-card:active:not(:disabled) { transform: scale(0.98); }
+  .task-card:disabled { cursor: not-allowed; }
+  .task-card.completed { background: var(--primary-light); border-color: hsl(120 25% 75%); }
+  .task-card.past { 
+  opacity: 1; 
+  background: hsl(30 25% 92%); 
+  border-color: hsl(30 20% 85%);
+}
+.task-card.past .task-name { color: hsl(30 15% 45%); }
+.task-card.past .task-desc { color: hsl(30 10% 55%); }
+.task-card.past .task-points { color: hsl(30 30% 50%); }
+  .task-icon { font-size: 1.5rem; }
+  .task-name-row {
+    width: 100%; display: flex; align-items: center; gap: 0.375rem; flex-wrap: nowrap;
+  }
+  .task-name { font-weight: 600; color: var(--foreground); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-card.completed .task-name { color: hsl(120 30% 35%); }
+  .task-check {
+    width: 1.25rem; height: 1.25rem; border-radius: 9999px;
+    background: var(--primary); color: white;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; animation: bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  .task-desc {
+    font-size: 0.75rem; color: var(--muted-foreground);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; line-height: 1.4;
+  }
+  .task-points { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+  .float-text {
+    position: absolute; font-size: 1.125rem; font-weight: 900;
+    color: var(--primary); text-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+    pointer-events: none; z-index: 20; animation: floatUp 0.9s ease-out forwards;
+  }
+  .reward-card:hover:not(:disabled) {
+    transform: translateY(-2px); box-shadow: 0 4px 8px 0 rgb(0 0 0 / 0.06);
+  }
+  .reward-card:active:not(:disabled) { transform: scale(0.98); }
+  .reward-card:disabled {
+    cursor: not-allowed; opacity: 0.6;
+    background: var(--muted); border-color: var(--border);
+  }
+  .reward-icon { font-size: 1.75rem; }
+  .reward-name { font-weight: 600; color: var(--foreground); }
+  .reward-desc {
+    font-size: 0.6875rem; color: var(--muted-foreground);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 2em; line-height: 1.3;
+  }
+  .reward-points { font-size: 0.875rem; font-weight: 700; color: var(--secondary-foreground); }
+  .reward-card:disabled .reward-points { color: var(--muted-foreground); }
+  .progress-ring-wrap {
+    position: relative; width: 5rem; height: 5rem; display: inline-block;
+  }
+  .progress-ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .progress-ring-value {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .progress-ring-label {
+    text-align: center; font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.5rem;
+  }
+  .rings-container { display: flex; justify-content: space-around; }
+  .ring-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+  .css-bar-chart {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    height: 180px; padding: 0 0.5rem; gap: 0.25rem;
+    border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;
+  }
+  .css-bar-group {
+    flex: 1; display: flex; align-items: flex-end; justify-content: center;
+    gap: 2px; height: 100%; position: relative;
+  }
+  .css-bar {
+    width: 40%; border-radius: 3px 3px 0 0; transition: height 0.6s ease; min-height: 2px;
+  }
+  .css-bar.earn { background: #7CB689; }
+  .css-bar.spend { background: #E8B88B; }
+  .css-bar-label {
+    position: absolute; bottom: -1.25rem; font-size: 11px; color: var(--muted-foreground);
+  }
+  .css-chart-legend {
+    display: flex; justify-content: center; gap: 1rem; font-size: 12px;
+    margin-top: 1.25rem; margin-bottom: 0.5rem; color: var(--muted-foreground);
+  }
+  .css-legend-item { display: flex; align-items: center; gap: 0.375rem; }
+  .css-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .calendar-grid-header {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; margin-bottom: 0.5rem;
+  }
+  .calendar-grid-header div {
+    text-align: center; font-size: 11px; color: var(--muted-foreground);
+    font-weight: 500; padding: 0.25rem 0;
+  }
+  .calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem;
+  }
+  .calendar-day {
+    aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: none; font-family: inherit; transition: all 0.15s ease;
+  }
+  .calendar-day:hover:not(:disabled) { filter: brightness(0.95); }
+  .calendar-day:disabled { cursor: default; }
+  .calendar-day.other-month { background: transparent !important; color: hsl(25 8% 50% / 0.3); }
+  .calendar-day.selected { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .calendar-legend {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.75rem; font-size: 11px; color: var(--muted-foreground); margin-top: 0.75rem;
+  }
+  .calendar-legend .colors { display: flex; gap: 2px; }
+  .calendar-legend .color-block { width: 12px; height: 12px; border-radius: 3px; }
+  .history-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid hsl(30 15% 88% / 0.4);
+  }
+  .history-header > div:first-child {
+    position: static;
+    left: auto;
+    transform: none;
+  }
+  .history-list { list-style: none; padding: 0 1.25rem; }
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.75rem; padding: 0.75rem 0;
+    border-bottom: 1px solid hsl(30 15% 88% / 0.6);
+    animation: fadeInUp 0.3s ease-out both;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1; }
+  .history-icon {
+    width: 2rem; height: 2rem; border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.875rem; font-weight: 700; flex-shrink: 0;
+  }
+  .history-icon.earn { background: var(--primary); color: white; }
+  .history-icon.spend { background: var(--secondary); color: var(--secondary-foreground); }
+  .history-info { min-width: 0; }
+  .history-name {
+    font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .history-time { font-size: 0.75rem; color: var(--muted-foreground); }
+  .history-points {
+    font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .history-points.earn { color: var(--primary); }
+  .history-points.spend { color: var(--secondary-foreground); }
+  .history-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 2.5rem 0; color: var(--muted-foreground);
+  }
+  .history-empty .emoji { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.3; }
+  .history-empty .text { font-size: 0.875rem; }
+  .history-empty .hint { font-size: 0.75rem; margin-top: 0.25rem; }
+  .history-more { 
+    display: flex; 
+    justify-content: center; 
+    padding: 0.5rem 1.25rem 0; 
+    margin-bottom: -0.5rem;
+  }
+  .history-footer {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1.25rem 1rem; margin-top: 0;
+    border-top: 1px solid hsl(30 15% 88% / 0.4);
+    font-size: 0.75rem; color: var(--muted-foreground);
+  }
+  .toast-container {
+    position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+    z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
+  }
+  .toast-item {
+    padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: white;
+    border: 1px solid var(--border); box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+    font-size: 0.875rem; font-weight: 500; color: var(--foreground);
+    min-width: 200px; text-align: center; animation: toastIn 0.3s ease-out;
+  }
+  .toast-item.success { border-color: hsl(120 25% 75%); background: hsl(120 30% 97%); color: hsl(120 30% 35%); }
+  .toast-item.error { border-color: hsl(20 50% 80%); background: hsl(20 70% 97%); color: hsl(20 50% 40%); }
+  .toast-item.info { background: hsl(40 20% 96%); }
+  .dialog-overlay {
+    position: fixed; inset: 0; background: rgb(0 0 0 / 0.4);
+    backdrop-filter: blur(4px); z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem; animation: fadeIn 0.2s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .dialog-content {
+    background: white; border-radius: 1rem; padding: 1.5rem 1.75rem;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 20px 40px rgb(0 0 0 / 0.15);
+    animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dialog-header { text-align: center; margin-bottom: 1.25rem; }
+  .dialog-icon {
+    width: 3.5rem; height: 3.5rem; margin: 0 auto 0.75rem;
+    border-radius: 9999px; background: var(--primary/10);
+    display: flex; align-items: center; justify-content: center; font-size: 1.75rem;
+  }
+  .dialog-title { font-size: 1.25rem; font-weight: 700; }
+  .dialog-desc { font-size: 0.875rem; color: var(--muted-foreground); margin-top: 0.5rem; line-height: 1.6; }
+  .dialog-footer { margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
+  .rule-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .rule-item {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.75rem; border-radius: 0.5rem; background: hsl(40 20% 92% / 0.5);
+  }
+  .rule-icon {
+    width: 2.25rem; height: 2.25rem; border-radius: 9999px;
+    background: var(--primary/10);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .rule-title { font-weight: 600; font-size: 0.9375rem; }
+  .rule-desc { font-size: 0.8125rem; color: var(--muted-foreground); margin-top: 0.125rem; line-height: 1.5; }
+  footer {
+    text-align: center; padding-bottom: 2rem;
+    color: var(--muted-foreground); font-size: 0.75rem;
+  }
+  footer p + p { margin-top: 0.25rem; }
+  .section { margin-bottom: 2rem; }
+  @media (min-width: 768px) {
+    .section { margin-bottom: 2.5rem; }
+    main { padding: 2.5rem 0; }
+  }
+  main { padding: 2rem 0; }
+  .chart-summary {
+    display: flex; justify-content: space-around; margin-top: 1rem; font-size: 0.875rem; color: var(--muted-foreground);
+  }
+  .chart-summary .earn { color: var(--primary); font-weight: 600; }
+  .chart-summary .spend { color: var(--secondary-foreground); font-weight: 600; }
+  .repeat-badge {
+    font-size: 0.625rem; background: hsl(120 25% 55% / 0.15);
+    color: hsl(120 30% 35%); padding: 2px 6px; border-radius: 9999px; margin-left: 4px;
+  }
+  .manage-btns {
+    display: flex; gap: 4px; flex-shrink: 0; z-index: 1;
+  }
+  .manage-btn {
+    width: 1.5rem; height: 1.5rem; border: 1px solid var(--border); background: white;
+    border-radius: 6px; cursor: pointer; font-size: 0.75rem;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.6; transition: all 0.15s; flex-shrink: 0;
+  }
+  .manage-btn:hover { opacity: 1; }
+  .manage-btn.edit:hover { border-color: var(--primary); color: var(--primary); background: var(--primary/10); }
+  .manage-btn.delete:hover { border-color: var(--destructive); color: var(--destructive); background: hsl(0 70% 95%); }
+  .slot-badge {
+    font-size: 0.625rem; padding: 2px 6px; border-radius: 9999px; margin-left: 4px;
+  }
+  .slot-badge.morning { background: hsl(45 80% 90%); color: hsl(30 60% 35%); }
+  .slot-badge.evening { background: hsl(250 60% 90%); color: hsl(240 50% 40%); }
+    /* 突发任务卡片样式 */
+    .special-task-card {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+
+.special-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.special-task-card.completed {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+}
+
+.special-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.special-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+  input[type="text"], input[type="number"] {
+    width: 100%; padding: 0.625rem 0.75rem; border: 1px solid var(--border);
+    border-radius: 0.5rem; font-size: 0.875rem; font-family: inherit; outline: none;
+  }
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary/10);
+  }
+  .dialog-form-group { margin-bottom: 0.75rem; }
+  .dialog-form-group label {
+    font-size: 0.875rem; font-weight: 500; display: block; margin-bottom: 0.375rem;
+  }
+  .type-toggle {
+    display: flex; gap: 0.5rem;
+  }
+  .type-toggle .btn { flex: 1; }
+    /* ============ 响应式布局 ============ */
+    @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .container { padding: 0 0.75rem; }
+    main { padding: 1rem 0; }
+    
+    /* 任务网格：单列显示 */
+    .task-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    
+    
+    /* 奖励网格：双列显示 */
+    .reward-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    
+    /* 统计卡片：单列 */
+    .stats-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    
+    /* 英雄区域 */
+    .hero-banner { padding: 1.5rem 1rem; }
+    .hero-banner .nav-btn { font-size: 11px; padding: 4px 10px; right: 0.5rem; top: 0.5rem; }
+    .hero-emoji { font-size: 2rem; }
+    .hero-title { font-size: 1.125rem; }
+    
+    /* 总积分卡片 */
+    .points-total-card { padding: 1.5rem 1rem; }
+    .points-big { font-size: 2.5rem; }
+    
+    /* 日期导航 */
+    .date-nav { padding: 0.5rem; }
+    
+    /* 章节标题 */
+    .section-title h2 { font-size: 1rem; }
+    
+    /* 卡片内边距调整 */
+    .card-header { padding: 0.75rem 1rem 0.5rem; }
+    .card-body { padding: 1rem; }
+    
+    /* 任务卡片优化触摸体验 */
+    .task-card { padding: 0.75rem; min-height: 70px; max-width: none; }
+    .task-icon { font-size: 1.25rem; }
+    .task-points { font-size: 0.75rem; }
+    
+    /* 奖励卡片优化 */
+    .reward-card { padding: 0.75rem; max-width: none; }
+    .reward-icon { font-size: 1.5rem; }
+    .reward-name { font-size: 0.8125rem; }
+    .reward-desc { font-size: 0.625rem; min-height: 1.5em; }
+    .reward-points { font-size: 0.75rem; }
+    
+    /* 按钮尺寸增大便于触摸 */
+    .btn { min-height: 44px; font-size: 0.8125rem; }
+    .btn-sm { height: 36px; padding: 0 0.625rem; }
+    .btn-icon { width: 44px; height: 44px; }
+    
+    /* 历史记录优化 */
+    .history-list { padding: 0 1rem; }
+    .history-item { padding: 0.625rem 0; }
+    .history-icon { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
+    
+    /* 进度环区域 */
+    .rings-container { flex-wrap: wrap; gap: 0.5rem; }
+    .progress-ring-wrap { width: 4rem; height: 4rem; }
+    
+    /* 柱状图 */
+    .css-bar-chart { height: 140px; }
+    
+    /* 弹窗适配 */
+    .dialog-content { padding: 1.25rem; max-width: 100%; margin: 0 0.5rem; }
+    
+    /* 日历区域 */
+    .calendar-day { font-size: 10px; }
+    
+    /* 管理按钮缩小 */
+    .manage-btn { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
+    
+    /* 历史头部按钮 - 标题和按钮保持在同一行 */
+    .history-header { flex-wrap: nowrap; }
+  }
+
+  @media (max-width: 1024px) {
+    .task-grid { grid-template-columns: repeat(3, 1fr); }
+    .reward-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .task-grid { grid-template-columns: repeat(2, 1fr); }
+    .reward-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .container { padding: 0 0.75rem; }
+    main { padding: 1rem 0; }
+    
+    .task-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    .reward-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .stats-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    
+    .hero-banner { padding: 1.5rem 1rem; }
+    .hero-emoji { font-size: 2rem; }
+    .hero-title { font-size: 1.125rem; }
+    
+    .points-total-card { padding: 1.5rem 1rem; }
+    .points-big { font-size: 2.5rem; }
+    
+    .date-nav { padding: 0.5rem; }
+    .section-title h2 { font-size: 1rem; }
+    
+    .card-header { padding: 0.75rem 1rem 0.5rem; }
+    .card-body { padding: 1rem; }
+    
+    .task-card { padding: 0.75rem; min-height: 70px; }
+    .task-icon { font-size: 1.25rem; }
+    .task-points { font-size: 0.75rem; }
+    
+    .reward-card { padding: 0.75rem; }
+    .reward-icon { font-size: 1.5rem; }
+    .reward-name { font-size: 0.8125rem; }
+    .reward-desc { font-size: 0.625rem; min-height: 1.5em; }
+    .reward-points { font-size: 0.75rem; }
+    
+    .btn { min-height: 44px; font-size: 0.8125rem; }
+    .btn-sm { height: 36px; padding: 0 0.625rem; }
+    .btn-icon { width: 44px; height: 44px; }
+    
+    .history-list { padding: 0 1rem; }
+    .history-item { padding: 0.625rem 0; }
+    .history-icon { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
+    
+    .rings-container { flex-wrap: wrap; gap: 0.5rem; }
+    .progress-ring-wrap { width: 4rem; height: 4rem; }
+    .css-bar-chart { height: 140px; }
+    
+    .dialog-content { padding: 1.25rem; max-width: 100%; margin: 0 0.5rem; }
+    .calendar-day { font-size: 10px; }
+    
+    .manage-btn { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
+    .history-header { flex-wrap: nowrap; }
+  }
+  
+  @media (max-width: 360px) {
+    .reward-grid { grid-template-columns: 1fr; }
+    .task-card { font-size: 0.8125rem; }
+  }
+  
+  /* 横屏模式优化 */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .hero-banner { padding: 1rem; }
+    .points-total-card { padding: 1rem; }
+    .points-big { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ============ 默认数据（首次使用时写入 localStorage）============
+const DEFAULT_TASKS = [
+  { id: '1', name: '早起', points: 20, description: '8:00前起床算早起', icon: '🌅' },
+  { id: '2', name: '早睡', points: 20, description: '23:30前入睡', icon: '🌙' },
+  { id: '3', name: '完成工作', points: 50, description: '9:30-18:30居家办公', icon: '💻' },
+  { id: '4', name: '背单词', points: 5, description: '每天20个新词/清理每日复习', icon: '📚', repeatable: true },
+  { id: '5a', name: '早起洗漱', points: 5, description: '早上洗漱', icon: '🪥', timeSlot: 'morning' },
+  { id: '5b', name: '睡前洗漱', points: 5, description: '晚上洗漱', icon: '🪥', timeSlot: 'evening' },
+  { id: '6a', name: '护肤(早)', points: 5, description: '早上护理', icon: '🧴', timeSlot: 'morning' },
+  { id: '6b', name: '护肤(晚)', points: 5, description: '晚上护理', icon: '🧴', timeSlot: 'evening' },
+  { id: '7', name: '喝秋梨膏', points: 5, description: '一杯', icon: '🍐' },
+  { id: '8', name: '拉橡皮筋', points: 5, description: '每拉一次加分，可多次', icon: '🏃', repeatable: true },
+  { id: '9', name: '赚取微软积分', points: 10, description: '完成微软积分任务', icon: '🎯' },
+  { id: '10a', name: '吃药抹药(早)', points: 5, description: '早上吃药抹药', icon: '💊', timeSlot: 'morning' },
+  { id: '10b', name: '吃药抹药(晚)', points: 5, description: '晚上吃药抹药', icon: '💊', timeSlot: 'evening' },
+];
+const DEFAULT_REWARDS = [
+  { id: '1', name: '刷视频一小时', points: 10, description: '短视频/视频平台一小时', unit: '小时', icon: '🎬' },
+  { id: '2', name: '追剧', points: 20, description: '每集20积分', unit: '集', icon: '📺' },
+  { id: '3a', name: '看小说15分钟', points: 15, description: '十五分钟阅读', unit: '次', icon: '📖' },
+  { id: '3b', name: '看小说半小时', points: 30, description: '半小时阅读', unit: '次', icon: '📖' },
+  { id: '3', name: '看小说', points: 60, description: '每小时60积分', unit: '小时', icon: '📖' },
+  { id: '4', name: '打游戏', points: 30, description: '每小时30积分', unit: '小时', icon: '🎮' },
+  { id: '5', name: '奶茶', points: 400, description: '25元起送，高积分门槛控制频率', unit: '杯', icon: '🧋' },
+  { id: '6', name: '出门吃饭', points: 500, description: '约50元，用积分替代花钱冲动', unit: '次', icon: '🍜' },
+  { id: '7', name: '清理游戏日常', points: 10, description: '完成游戏日常任务清理', unit: '次',icon: '🧹' },
+  { id: '8', name: '小额解馋零食', points: 100, description: '5-8元，小额解馋', unit: '次', icon: '🍪' },
+  { id: '9', name: '常规零食', points: 200, description: '10-18元，常规零食', unit: '次', icon: '🍫' },
+  { id: '10', name: '豪华零食大餐', points: 400, description: '20-30元，豪华零食', unit: '次', icon: '🍱' },
+];
+
+// ============ 可变数据（从 localStorage 加载，用户可编辑）============
+let TASKS = [];
+let REWARDS = [];
+
+const WEEKDAY_NAMES = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+// ============ 状态管理 ============
+const STORAGE_KEYS = {
+  TOTAL: 'lifepoints_total',
+  HISTORY: 'lifepoints_history',
+  DAILY_TASKS: 'lifepoints_dailyTasks',
+  ONBOARDED: 'lifepoints_onboarded',
+  SPECIAL_TASKS: 'lifepoints_specialTasks',
+  TASK_DEFS: 'lifepoints_taskDefs',
+  REWARD_DEFS: 'lifepoints_rewardDefs',
+};
+function getStorageNumber(key, fallback) {
+  try { const v = localStorage.getItem(key); if (v === null) return fallback; const n = Number(v); return Number.isFinite(n) ? n : fallback; } catch (e) { return fallback; }
+}
+function getStorageJSON(key, fallback) {
+  try { const v = localStorage.getItem(key); if (!v) return fallback; return JSON.parse(v); } catch (e) { return fallback; }
+}
+
+const Store = {
+  state: null,
+  listeners: new Set(),
+init() {
+    this.state = {
+      totalPoints: getStorageNumber(STORAGE_KEYS.TOTAL, 0),
+      history: getStorageJSON(STORAGE_KEYS.HISTORY, []),
+      dailyTasks: getStorageJSON(STORAGE_KEYS.DAILY_TASKS, {}),
+      onboarded: localStorage.getItem(STORAGE_KEYS.ONBOARDED) === '1',
+      currentDate: formatDate(new Date()),
+      allEarnedToday: false,
+      specialTasks: getStorageJSON(STORAGE_KEYS.SPECIAL_TASKS, {}),
+    };
+    
+    // 加载任务和奖励定义（首次使用时写入默认数据）
+    this._loadTaskDefs();
+    
+    // 数据迁移：确保所有旧任务都有完整属性
+    this._migrateSpecialTasks();
+    
+    // 初始化时检查今日是否已完成全勤奖励
+    this._checkAllEarnedToday();
+  },
+  _loadTaskDefs() {
+    const savedTasks = getStorageJSON(STORAGE_KEYS.TASK_DEFS, null);
+    const savedRewards = getStorageJSON(STORAGE_KEYS.REWARD_DEFS, null);
+    
+    if (savedTasks && Array.isArray(savedTasks)) {
+      TASKS = savedTasks;
+    } else {
+      TASKS = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      try { localStorage.setItem(STORAGE_KEYS.TASK_DEFS, JSON.stringify(TASKS)); } catch(e) {}
+    }
+    
+    if (savedRewards && Array.isArray(savedRewards)) {
+      REWARDS = savedRewards;
+    } else {
+      REWARDS = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+      try { localStorage.setItem(STORAGE_KEYS.REWARD_DEFS, JSON.stringify(REWARDS)); } catch(e) {}
+    }
+  },
+  // 数据迁移方法
+  _migrateSpecialTasks() {
+    let changed = false;
+    for (const date in this.state.specialTasks) {
+      const tasks = this.state.specialTasks[date];
+      if (!Array.isArray(tasks)) {
+        // 如果不是数组，转换为数组
+        this.state.specialTasks[date] = [];
+        changed = true;
+        continue;
+      }
+      this.state.specialTasks[date] = tasks.filter(task => {
+        // 过滤掉已完成的旧任务
+        if (task && task.completed) return false;
+        // 确保任务有 id 属性
+        if (!task.id) {
+          task.id = 'special-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+          changed = true;
+        }
+        // 确保任务有 completed 属性
+        if (task.completed === undefined) {
+          task.completed = false;
+          changed = true;
+        }
+        // 确保任务有 icon 属性
+        if (!task.icon) {
+          task.icon = '⚡';
+          changed = true;
+        }
+        return true;
+      });
+      if (tasks.length !== this.state.specialTasks[date].length) {
+        changed = true;
+      }
+    }
+    if (changed) {
+      this._persist();
+    }
+  },
+  // 新增方法：检查今日全勤奖励状态
+  _checkAllEarnedToday() {
+    const today = formatDate(new Date());
+    const todayRecords = this.state.history.filter(r => r.date === today);
+    const bonusRecord = todayRecords.find(r => r.itemId === 'all-earned-bonus');
+    this.state.allEarnedToday = !!bonusRecord;
+  },
+  subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },
+  notify() { this.listeners.forEach(fn => fn(this.state)); },
+  finishOnboarding() {
+    this.state.onboarded = true;
+    try { localStorage.setItem(STORAGE_KEYS.ONBOARDED, '1'); } catch(e) {}
+    this.notify();
+  },
+  setCurrentDate(date) { this.state.currentDate = date; this.notify(); },
+  goPrevDay() {
+    const d = new Date(this.state.currentDate);
+    d.setDate(d.getDate() - 1);
+    this.state.currentDate = formatDate(d);
+    this.notify();
+  },
+  goNextDay() {
+    const d = new Date(this.state.currentDate);
+    d.setDate(d.getDate() + 1);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 1); // 最多只能到明天
+    const next = formatDate(d);
+    if (d > maxDate) return;
+    this.state.currentDate = next;
+    this.notify();
+},
+  goToday() { this.state.currentDate = formatDate(new Date()); this.notify(); },
+  // ... existing code ...
+  checkinTask(task) {
+    const today = formatDate(new Date());
+    if (this.state.currentDate !== today) return { success: false, message: '只能打卡当天的任务哦～' };
+    
+    if (!task.repeatable) {
+      const completed = this.state.dailyTasks[today] ?? [];
+      if (completed.includes(task.id)) return { success: false, message: '今天已经完成过这个任务啦' };
+      this.state.dailyTasks = { ...this.state.dailyTasks, [today]: [...completed, task.id] };
+    }
+    
+    this.state.totalPoints += task.points;
+    const record = {
+      id: Date.now() + '-' + task.id + '-' + Math.random().toString(36).slice(2, 7),
+      date: today, timestamp: Date.now(),
+      itemName: task.name, type: 'earn', points: task.points, itemId: task.id,
+    };
+    this.state.history = [record, ...this.state.history];
+    
+    // 检查全勤奖励
+    const fixedTasks = TASKS.filter(t => !t.repeatable);
+    const completedToday = this.state.dailyTasks[today] ?? [];
+    const allCompleted = fixedTasks.every(t => completedToday.includes(t.id));
+    
+    if (allCompleted && !this.state.allEarnedToday) {
+      const bonusPoints = 50;
+      this.state.totalPoints += bonusPoints;
+      const bonusRecord = {
+        id: Date.now() + '-all-earned-' + Math.random().toString(36).slice(2, 7),
+        date: today, timestamp: Date.now(),
+        itemName: '每日全勤奖励', type: 'earn', points: bonusPoints, itemId: 'all-earned-bonus',
+      };
+      this.state.history = [bonusRecord, ...this.state.history];
+      this.state.allEarnedToday = true;
+      this._persist();
+      this.notify();
+      return { success: true, message: '🎉 +' + task.points + ' 积分！全勤奖励 +' + bonusPoints + ' 积分！' };
+    }
+    
+    this._persist();
+    this.notify();
+    return { success: true, message: '+' + task.points + ' 积分！' };
+  },
+
+  addManualRecord(name, points, type) {
+    const today = formatDate(new Date());
+    if (this.state.currentDate !== today) return { success: false, message: '只能记录当天的积分哦～' };
+    if (!name || !name.trim()) return { success: false, message: '请输入记录名称' };
+    if (!points || points <= 0) return { success: false, message: '请输入有效积分数' };
+    
+    const actualPoints = type === 'earn' ? points : -points;
+    this.state.totalPoints += actualPoints;
+    const record = {
+      id: Date.now() + '-manual-' + Math.random().toString(36).slice(2, 7),
+      date: today, timestamp: Date.now(),
+      itemName: name.trim(), type: type, points: actualPoints,
+      itemId: 'manual',
+    };
+    this.state.history = [record, ...this.state.history];
+    this._persist();
+    this.notify();
+    return { success: true, message: (type === 'earn' ? '+' : '-') + points + ' 积分记录已添加' };
+  },
+ // ... existing code ...
+ redeemReward(reward) {
+    const today = formatDate(new Date());
+    if (this.state.totalPoints < reward.points) {
+      return { success: false, message: '积分不足，还差 ' + (reward.points - this.state.totalPoints) + ' 分～' };
+    }
+    
+    //    // 100积分以下的奖励只能用当天赚取的积分兑换
+    //    if (reward.points < 100) {
+    //   const netEarned = this.todayNetEarned();
+    //   if (netEarned < reward.points) {
+    //     return { success: false, message: '小额奖励需用当天赚取的积分兑换，今日净赚 ' + netEarned + ' 分，还差 ' + (reward.points - netEarned) + ' 分～' };
+    //   }
+    // }
+    
+    this.state.totalPoints -= reward.points;
+    const record = {
+      id: Date.now() + '-' + reward.id, date: today, timestamp: Date.now(),
+      itemName: reward.name, type: 'spend', points: reward.points, itemId: reward.id,
+    };
+    this.state.history = [record, ...this.state.history];
+    this._persist();
+    this.notify();
+    return { success: true, message: '-' + reward.points + ' 积分，尽情享受吧！' };
+  },
+// ... existing code ...
+resetToday() {
+  const today = formatDate(new Date());
+  
+  // 计算今日赚取的总积分（包括手动添加的）
+  const todayEarned = this.state.history
+    .filter(r => r.date === today && r.type === 'earn')
+    .reduce((sum, r) => sum + r.points, 0);
+  
+  // 计算今日花费的总积分
+  const todaySpent = this.state.history
+    .filter(r => r.date === today && r.type === 'spend')
+    .reduce((sum, r) => sum + r.points, 0);
+  
+  // 如果没有任何记录，返回0
+  if (todayEarned === 0 && todaySpent === 0) return 0;
+  
+  // 删除今日所有记录
+  this.state.history = this.state.history.filter(r => !(r.date === today));
+  
+  // 恢复积分：减去赚取的，加回花费的
+  this.state.totalPoints = this.state.totalPoints - todayEarned + todaySpent;
+  
+  // 清空今日任务
+  const newDaily = { ...this.state.dailyTasks };
+  delete newDaily[today];
+  this.state.dailyTasks = newDaily;
+  
+  // 重置全勤奖励状态（用户重置后可以重新获得全勤奖）
+  this.state.allEarnedToday = false;
+  
+  this._persist();
+  this.notify();
+  return todayEarned + todaySpent;
+},
+  exportRecords() {
+    if (this.state.history.length === 0 && this.state.totalPoints === 0) return { success: false, message: '还没有积分数据哦～' };
+    const exportData = {
+      version: '2.0',
+      exportTime: new Date().toISOString(),
+      totalPoints: this.state.totalPoints,
+      history: this.state.history,
+      dailyTasks: this.state.dailyTasks,
+      specialTasks: this.state.specialTasks,
+      tasks: TASKS,
+      rewards: REWARDS
+    };
+    const text = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '积分数据_' + formatDate(new Date()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return { success: true, message: '已导出积分数据，请将文件传输到手机～' };
+  },
+  importRecords() {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,.txt,application/json,text/plain';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+          resolve({ success: false, message: '未选择文件' });
+          return;
+        }
+        try {
+          const text = await file.text();
+          const isTxt = file.name.toLowerCase().endsWith('.txt') || file.type === 'text/plain';
+          let data;
+          if (isTxt) {
+            // 解析txt文件 - 支持多种格式
+            const history = [];
+            const lines = text.split(/\r?\n/).filter(line => line.trim());
+            
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) continue;
+              
+              let record = null;
+              
+              // 格式1(推荐): 日期 [时间] 描述 ±积分
+              // 例如: 2026-08-21 22:27 刷视频一小时 -10
+              // 例如: 2026-08-21 完成英语阅读 +20
+              // 例如: 2026-08-21 跑步3公里 15
+              const simpleMatch = trimmed.match(/^(\d{4}-\d{1,2}-\d{1,2})(?:\s+\d{1,2}:\d{2})?\s+(.+?)\s+([+-]\d+)\s*$/);
+              if (simpleMatch) {
+                const [, dateStr, itemName, pointsStr] = simpleMatch;
+                const points = parseInt(pointsStr);
+                const absPoints = Math.abs(points);
+                const type = points < 0 ? 'spend' : 'earn';
+                
+                if (itemName && absPoints > 0) {
+                  const dateParts = dateStr.split('-');
+                  const normalizedDate = `${dateParts[0]}-${String(parseInt(dateParts[1])).padStart(2,'0')}-${String(parseInt(dateParts[2])).padStart(2,'0')}`;
+                  const timestamp = new Date(normalizedDate + 'T12:00:00').getTime();
+                  
+                  record = {
+                    id: `${timestamp}-txt-${Math.random().toString(36).slice(2, 7)}`,
+                    date: normalizedDate,
+                    timestamp: timestamp,
+                    itemName: itemName.trim(),
+                    type: type,
+                    points: type === 'spend' ? -absPoints : absPoints,
+                    itemId: 'txt-import'
+                  };
+                }
+              }
+              
+              // 格式2: 用分隔符(竖线/逗号/制表符)的标准格式
+              // 日期 | 描述 | 类型 | 积分
+              if (!record) {
+                let parts;
+                if (trimmed.includes('|')) {
+                  parts = trimmed.split('|').map(s => s.trim());
+                } else if (trimmed.includes(',')) {
+                  parts = trimmed.split(',').map(s => s.trim());
+                } else if (trimmed.includes('\t')) {
+                  parts = trimmed.split('\t').map(s => s.trim());
+                }
+                
+                if (parts && parts.length >= 4) {
+                  const [dateStr, itemName, typeStr, pointsStr] = parts;
+                  let points = parseInt(pointsStr) || 0;
+                  
+                  // 检查积分是否带符号
+                  if (pointsStr.startsWith('-')) {
+                    points = -Math.abs(points);
+                  }
+                  
+                  // 确定类型
+                  let type;
+                  if (points < 0) {
+                    type = 'spend';
+                    points = Math.abs(points);
+                  } else if (typeStr && (typeStr.includes('支') || typeStr.toLowerCase() === 'spend')) {
+                    type = 'spend';
+                  } else {
+                    type = 'earn';
+                  }
+                  
+                  if (dateStr && itemName && points > 0 && /^\d{4}-/.test(dateStr)) {
+                    const dateMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+                    if (dateMatch) {
+                      const normalizedDate = `${dateMatch[1]}-${String(parseInt(dateMatch[2])).padStart(2,'0')}-${String(parseInt(dateMatch[3])).padStart(2,'0')}`;
+                      const timestamp = new Date(normalizedDate + 'T12:00:00').getTime();
+                      
+                      record = {
+                        id: `${timestamp}-txt-${Math.random().toString(36).slice(2, 7)}`,
+                        date: normalizedDate,
+                        timestamp: timestamp,
+                        itemName: itemName.trim(),
+                        type: type,
+                        points: type === 'spend' ? -points : points,
+                        itemId: 'txt-import'
+                      };
+                    }
+                  }
+                }
+              }
+              
+              if (record) {
+                history.push(record);
+              }
+            }
+            
+            if (history.length === 0) {
+              resolve({ 
+                success: false, 
+                message: 'txt文件格式错误，未能解析任何记录。\n\n支持格式示例:\n2026-08-21 刷视频一小时 -10\n2026-08-21 22:27 完成任务 +20\n2026-08-21 | 描述 | earn | 20'
+              });
+              return;
+            }
+            
+            const totalPoints = history.reduce((sum, r) => sum + r.points, 0);
+            data = {
+              totalPoints: totalPoints,
+              history: history,
+              dailyTasks: {},
+              specialTasks: {},
+              tasks: TASKS,
+              rewards: REWARDS
+            };
+          } else {
+            // JSON格式导入
+            data = JSON.parse(text);
+            if (!data || typeof data !== 'object') {
+              resolve({ success: false, message: '文件格式错误' });
+              return;
+            }
+            if (typeof data.totalPoints !== 'number' || !Array.isArray(data.history)) {
+              resolve({ success: false, message: '数据结构不完整' });
+              return;
+            }
+          }
+          
+          const totalPoints = data.totalPoints || 0;
+          const history = Array.isArray(data.history) ? data.history : [];
+          const dailyTasks = data.dailyTasks || {};
+          const specialTasks = data.specialTasks || {};
+          const importedTasks = Array.isArray(data.tasks) ? data.tasks : null;
+          const importedRewards = Array.isArray(data.rewards) ? data.rewards : null;
+          const recordCount = history.length;
+          
+          if (!confirm(`将导入 ${recordCount} 条记录，总积分 ${totalPoints}。\n\n是否覆盖当前数据？（确定覆盖，取消添加）`)) {
+            resolve({ success: false, message: '已取消导入' });
+            return;
+          }
+          const appendMode = !confirm('\n\n确定=覆盖当前数据\n取消=添加到当前数据');
+          if (appendMode) {
+            this.state.totalPoints = totalPoints;
+            this.state.history = history;
+            this.state.dailyTasks = dailyTasks;
+            this.state.specialTasks = specialTasks;
+            if (importedTasks) TASKS = importedTasks;
+            if (importedRewards) REWARDS = importedRewards;
+          } else {
+            this.state.totalPoints += totalPoints;
+            const existingIds = new Set(this.state.history.map(r => r.id));
+            const newHistory = history.filter(r => !existingIds.has(r.id));
+            this.state.history = [...this.state.history, ...newHistory];
+            for (const date in dailyTasks) {
+              if (!this.state.dailyTasks[date]) this.state.dailyTasks[date] = [];
+              this.state.dailyTasks[date] = [...new Set([...this.state.dailyTasks[date], ...dailyTasks[date]])];
+            }
+            for (const date in specialTasks) {
+              if (!this.state.specialTasks[date]) this.state.specialTasks[date] = [];
+              this.state.specialTasks[date] = [...this.state.specialTasks[date], ...specialTasks[date]];
+            }
+            if (importedTasks) {
+              const existingTaskIds = new Set(TASKS.map(t => t.id));
+              const newTasks = importedTasks.filter(t => !existingTaskIds.has(t.id));
+              TASKS = [...TASKS, ...newTasks];
+            }
+            if (importedRewards) {
+              const existingRewardIds = new Set(REWARDS.map(r => r.id));
+              const newRewards = importedRewards.filter(r => !existingRewardIds.has(r.id));
+              REWARDS = [...REWARDS, ...newRewards];
+            }
+          }
+          this._persist();
+          this.notify();
+          resolve({ success: true, message: `导入成功！共 ${recordCount} 条记录，总积分 ${this.state.totalPoints}` });
+        } catch (err) {
+          resolve({ success: false, message: '导入失败：' + err.message });
+        }
+      };
+      input.click();
+    });
+  },
+  _persist() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.TOTAL, String(this.state.totalPoints));
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(this.state.history));
+      localStorage.setItem(STORAGE_KEYS.DAILY_TASKS, JSON.stringify(this.state.dailyTasks));
+      localStorage.setItem(STORAGE_KEYS.SPECIAL_TASKS, JSON.stringify(this.state.specialTasks));
+      localStorage.setItem(STORAGE_KEYS.TASK_DEFS, JSON.stringify(TASKS));
+      localStorage.setItem(STORAGE_KEYS.REWARD_DEFS, JSON.stringify(REWARDS));
+    } catch (e) {}
+  },
+  isToday() { return this.state.currentDate === formatDate(new Date()); },
+  completedToday() { return this.state.dailyTasks[this.state.currentDate] ?? []; },
+  todayStats() {
+    const today = formatDate(new Date());
+    const todayRecords = this.state.history.filter(r => r.date === today);
+    const earned = todayRecords.filter(r => r.type === 'earn').reduce((s, r) => s + r.points, 0);
+    const spent = todayRecords.filter(r => r.type === 'spend').reduce((s, r) => s + r.points, 0);
+    return { earned, spent };
+  },
+  todayNetEarned() {
+    const today = formatDate(new Date());
+    const todayRecords = this.state.history.filter(r => r.date === today);
+    const earned = todayRecords.filter(r => r.type === 'earn').reduce((s, r) => s + r.points, 0);
+    const spent = todayRecords.filter(r => r.type === 'spend').reduce((s, r) => s + r.points, 0);
+    return earned - spent;
+  },
+  getRedeemCountToday(itemId) {
+    const today = formatDate(new Date());
+    return this.state.history.filter(r => r.date === today && r.type === 'spend' && r.itemId === itemId).length;
+  },
+  getTaskCountToday(taskId) {
+  const today = formatDate(new Date());
+  return this.state.history.filter(r => r.date === today && r.type === 'earn' && r.itemId === taskId).length;
+},
+
+// ============ 任务 CRUD ============
+addTask(task) {
+  const id = 'task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  const newTask = {
+    id: id,
+    name: task.name || '新任务',
+    points: task.points || 10,
+    description: task.description || '',
+    icon: task.icon || '✅',
+    repeatable: task.repeatable || false,
+    timeSlot: task.timeSlot || null
+  };
+  TASKS.push(newTask);
+  this._persist();
+  this.notify();
+  return { success: true, message: '任务已添加' };
+},
+updateTask(taskId, updates) {
+  const idx = TASKS.findIndex(t => t.id === taskId);
+  if (idx === -1) return { success: false, message: '任务不存在' };
+  TASKS[idx] = { ...TASKS[idx], ...updates };
+  this._persist();
+  this.notify();
+  return { success: true };
+},
+deleteTask(taskId) {
+  const idx = TASKS.findIndex(t => t.id === taskId);
+  if (idx === -1) return { success: false, message: '任务不存在' };
+  TASKS.splice(idx, 1);
+  // 同时删除历史中该任务的打卡记录，回退积分
+  const refund = this.state.history
+    .filter(r => r.itemId === taskId && r.type === 'earn')
+    .reduce((s, r) => s + r.points, 0);
+  if (refund > 0) {
+    this.state.totalPoints -= refund;
+  }
+  this.state.history = this.state.history.filter(r => r.itemId !== taskId);
+  // 从 dailyTasks 中移除
+  for (const date in this.state.dailyTasks) {
+    this.state.dailyTasks[date] = this.state.dailyTasks[date].filter(id => id !== taskId);
+  }
+  this._persist();
+  this.notify();
+  return { success: true, message: '任务已删除' };
+},
+
+// ============ 奖励 CRUD ============
+addReward(reward) {
+  const id = 'reward-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  const newReward = {
+    id: id,
+    name: reward.name || '新奖励',
+    points: reward.points || 10,
+    description: reward.description || '',
+    icon: reward.icon || '🎁',
+    unit: reward.unit || '次'
+  };
+  REWARDS.push(newReward);
+  this._persist();
+  this.notify();
+  return { success: true, message: '奖励已添加' };
+},
+updateReward(rewardId, updates) {
+  const idx = REWARDS.findIndex(r => r.id === rewardId);
+  if (idx === -1) return { success: false, message: '奖励不存在' };
+  REWARDS[idx] = { ...REWARDS[idx], ...updates };
+  this._persist();
+  this.notify();
+  return { success: true };
+},
+deleteReward(rewardId) {
+  const idx = REWARDS.findIndex(r => r.id === rewardId);
+  if (idx === -1) return { success: false, message: '奖励不存在' };
+  REWARDS.splice(idx, 1);
+  // 回退积分：删除奖励兑换记录，积分加回
+  const refund = this.state.history
+    .filter(r => r.itemId === rewardId && r.type === 'spend')
+    .reduce((s, r) => s + r.points, 0);
+  if (refund > 0) {
+    this.state.totalPoints += refund;
+  }
+  this.state.history = this.state.history.filter(r => r.itemId !== rewardId);
+  this._persist();
+  this.notify();
+  return { success: true, message: '奖励已删除' };
+},
+
+getSpecialTasks(date) {
+  return this.state.specialTasks[date] || [];
+},
+addSpecialTask(date, task) {
+  // 移除限制，允许为任何日期布置
+  if (date < formatDate(new Date())) {
+    return { success: false, message: '不能为过去布置任务哦～' };
+  }
+  const newTask = {
+    id: 'special-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name: task.name,
+    points: task.points,
+    description: task.description || '',
+    icon: task.icon || '⚡',
+    completed: false,
+    createdDate: formatDate(new Date())
+  };
+  if (!this.state.specialTasks[date]) {
+    this.state.specialTasks[date] = [];
+  }
+  this.state.specialTasks[date].push(newTask);
+  this._persist();
+  this.notify();
+  return { success: true, message: '突发任务已布置～' };
+},
+completeSpecialTask(date, taskId) {
+  const tasks = this.state.specialTasks[date] || [];
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return { success: false, message: '任务不存在' };
+  if (task.completed) return { success: false, message: '任务已完成' };
+  
+  // 记录积分
+  this.state.totalPoints += task.points;
+  const record = {
+    id: Date.now() + '-' + task.id,
+    date: date,
+    timestamp: Date.now(),
+    itemName: '[突发] ' + task.name,
+    type: 'earn',
+    points: task.points,
+    itemId: task.id,
+  };
+  this.state.history = [record, ...this.state.history];
+  
+  // 完成后从数组中移除任务
+  this.state.specialTasks[date] = tasks.filter(t => t.id !== taskId);
+  
+  this._persist();
+  this.notify();
+  return { success: true, message: '🎉 +' + task.points + ' 积分！突发任务完成！' };
+},
+deleteSpecialTask(date, taskId) {
+  if (!this.state.specialTasks[date]) return;
+  this.state.specialTasks[date] = this.state.specialTasks[date].filter(t => t.id !== taskId);
+  this._persist();
+  this.notify();
+},
+  currentDateRecords() {
+    return this.state.history
+      .filter(r => r.date === this.state.currentDate)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  },
+  weeklyRate() {
+    const totalTasks = TASKS.filter(t => !t.repeatable).length;
+    const now = new Date();
+    const dayOfWeek = (now.getDay() + 6) % 7;
+    const days = dayOfWeek + 1;
+    let count = 0;
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = formatDate(d);
+      const completed = (this.state.dailyTasks[key] ?? []).filter(id => {
+        const task = TASKS.find(t => t.id === id);
+        return task && !task.repeatable;
+      }).length;
+      count += completed;
+    }
+    const total = totalTasks * days;
+    return total === 0 ? 0 : Math.round((count / total) * 100);
+  },
+  monthlyRate() {
+    const totalTasks = TASKS.filter(t => !t.repeatable).length;
+    const now = new Date();
+    const days = now.getDate();
+    let count = 0;
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
+      const key = formatDate(d);
+      const completed = (this.state.dailyTasks[key] ?? []).filter(id => {
+        const task = TASKS.find(t => t.id === id);
+        return task && !task.repeatable;
+      }).length;
+      count += completed;
+    }
+    const total = totalTasks * days;
+    return total === 0 ? 0 : Math.round((count / total) * 100);
+  },
+  last7Days() {
+    const result = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = formatDate(d);
+      const dayRecords = this.state.history.filter(r => r.date === key);
+      const earn = dayRecords.filter(r => r.type === 'earn').reduce((s, r) => s + r.points, 0);
+      const spend = dayRecords.filter(r => r.type === 'spend').reduce((s, r) => s + r.points, 0);
+      result.push({ date: key, label: (d.getMonth() + 1) + '/' + d.getDate(), earn, spend, net: earn - spend });
+    }
+    return result;
+  },
+  calendarData() {
+    const d = new Date(this.state.currentDate);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const totalTasks = TASKS.filter(t => !t.repeatable).length;
+    const days = [];
+    const firstDay = new Date(year, month, 1).getDay();
+    const prevMonthDays = firstDay === 0 ? 6 : firstDay - 1;
+    const prevMonthDate = new Date(year, month, 0);
+    for (let i = prevMonthDays - 1; i >= 0; i--) {
+      const dayNum = prevMonthDate.getDate() - i;
+      const dateKey = formatDate(new Date(year, month - 1, dayNum));
+      const completed = (this.state.dailyTasks[dateKey] ?? []).filter(id => {
+        const task = TASKS.find(t => t.id === id);
+        return task && !task.repeatable;
+      }).length;
+      days.push({ date: dateKey, day: dayNum, rate: totalTasks > 0 ? completed / totalTasks : 0, isCurrentMonth: false, isPast: dateKey <= formatDate(new Date()) });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateKey = formatDate(new Date(year, month, i));
+      const completed = (this.state.dailyTasks[dateKey] ?? []).filter(id => {
+        const task = TASKS.find(t => t.id === id);
+        return task && !task.repeatable;
+      }).length;
+      days.push({ date: dateKey, day: i, rate: totalTasks > 0 ? completed / totalTasks : 0, isCurrentMonth: true, isPast: dateKey <= formatDate(new Date()) });
+    }
+    while (days.length % 7 !== 0) {
+      const lastDate = days[days.length - 1].date;
+      const [y, m, dd] = lastDate.split('-').map(Number);
+      const next = new Date(y, m - 1, dd + 1);
+      days.push({ date: formatDate(next), day: next.getDate(), rate: 0, isCurrentMonth: false, isPast: formatDate(next) < formatDate(new Date()) });
+    }
+    return days;
+  },
+};
+
+// ============ Toast ============
+const Toast = {
+  container: null,
+  init() {
+    this.container = document.createElement('div');
+    this.container.className = 'toast-container';
+    document.body.appendChild(this.container);
+  },
+  show(message, type) {
+    if (!this.container) this.init();
+    const el = document.createElement('div');
+    el.className = 'toast-item ' + (type || 'info');
+    el.textContent = message;
+    this.container.appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-10px)';
+      el.style.transition = 'all 0.25s ease';
+      setTimeout(() => el.remove(), 250);
+    }, 2500);
+  },
+  success(msg) { this.show(msg, 'success'); },
+  error(msg) { this.show(msg, 'error'); },
+  info(msg) { this.show(msg, 'info'); },
+};
+
+// ============ 进度环 SVG ============
+function progressRingHTML(value, label, color) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+  return '<div class="ring-item">' +
+    '<div class="progress-ring-wrap">' +
+      '<svg viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="' + radius + '" fill="none" stroke="hsl(40 20% 92%)" stroke-width="8"></circle>' +
+        '<circle cx="50" cy="50" r="' + radius + '" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" style="transition: stroke-dashoffset 0.6s ease;"></circle>' +
+      '</svg>' +
+      '<div class="progress-ring-value" style="color: ' + color + ';">' + value + '%</div>' +
+    '</div>' +
+    '<div class="progress-ring-label">' + label + '</div>' +
+  '</div>';
+}
+
+// ============ CSS 柱状图 ============
+function cssBarChartHTML(data) {
+  const maxVal = Math.max.apply(null, data.map(d => Math.max(d.earn, d.spend)).concat([1]));
+  let barsHTML = '';
+  data.forEach(d => {
+    const earnH = Math.max(2, (d.earn / maxVal) * 100);
+    const spendH = Math.max(2, (d.spend / maxVal) * 100);
+    barsHTML += '<div class="css-bar-group">' +
+      '<div class="css-bar earn" style="height: ' + earnH + '%;" title="赚取: ' + d.earn + '"></div>' +
+      '<div class="css-bar spend" style="height: ' + spendH + '%;" title="花费: ' + d.spend + '"></div>' +
+      '<div class="css-bar-label">' + d.label + '</div>' +
+    '</div>';
+  });
+  return '<div class="css-chart-legend">' +
+    '<div class="css-legend-item"><span class="css-legend-dot" style="background:#7CB689"></span>赚取</div>' +
+    '<div class="css-legend-item"><span class="css-legend-dot" style="background:#E8B88B"></span>花费</div>' +
+  '</div><div class="css-bar-chart">' + barsHTML + '</div>';
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function getCalendarDayStyle(day, isSelected) {
+  if (!day.isCurrentMonth) return 'other-month';
+  let bg = 'var(--muted)';
+  let color = 'var(--foreground)';
+  
+  // 过去日期使用淡紫色/蓝紫色调
+  if (day.isPast && day.rate === 0) {
+    bg = 'hsl(270 25% 92%)';
+    color = 'hsl(270 15% 45%)';
+  } else if (day.isPast && day.rate > 0) {
+    // 过去但有打卡记录的日期，使用更深的紫色
+    if (day.rate < 0.3) { bg = 'hsl(270 30% 85%)'; }
+    else if (day.rate < 0.6) { bg = 'hsl(270 35% 78%)'; }
+    else if (day.rate < 0.9) { bg = 'hsl(270 40% 70%)'; color = 'hsl(270 15% 25%)'; }
+    else { bg = 'hsl(270 45% 65%)'; color = 'white'; }
+  } else if (day.rate > 0) {
+    // 未来日期使用绿色
+    if (day.rate < 0.3) { bg = 'var(--primary/20)'; }
+    else if (day.rate < 0.6) { bg = 'var(--primary/40)'; }
+    else if (day.rate < 0.9) { bg = 'var(--primary/60)'; color = 'white'; }
+    else { bg = 'var(--primary/80)'; color = 'white'; }
+  }
+  return 'background: ' + bg + '; color: ' + color + ';' + (isSelected ? ' outline: 2px solid var(--primary); outline-offset: 1px;' : '');
+}
+// ============ 渲染函数 ============
+function render() {
+  const s = Store.state;
+  const isToday = Store.isToday();
+  const completedToday = Store.completedToday();
+  const todayStats = Store.todayStats();
+  const currentDateRecords = Store.currentDateRecords();
+  const weeklyRate = Store.weeklyRate();
+  const monthlyRate = Store.monthlyRate();
+  const last7Days = Store.last7Days();
+  const calendarData = Store.calendarData();
+  const totalEarn7 = last7Days.reduce((sum, d) => sum + d.earn, 0);
+  const totalSpend7 = last7Days.reduce((sum, d) => sum + d.spend, 0);
+  const fixedTaskCount = TASKS.filter(t => !t.repeatable).length;
+
+  const d = new Date(s.currentDate);
+  const dateStr = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  const weekday = WEEKDAY_NAMES[d.getDay()];
+  const monthLabel = d.getFullYear() + '年' + (d.getMonth() + 1) + '月';
+  const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+
+  const tasksHTML = TASKS.map(task => {
+    const completed = completedToday.includes(task.id);
+    const isRepeatable = task.repeatable === true;
+    const disabled = (completed && !isRepeatable) || !isToday;
+    const classes = ['task-card', completed && !isRepeatable ? 'completed' : '', !isToday && !completed ? 'past' : ''].filter(Boolean).join(' ');
+    const checkHTML = completed && !isRepeatable
+      ? '<div class="task-check" title="已完成"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>'
+      : '';
+    
+    // 添加标签
+    let badgesHTML = '';
+    if (isRepeatable) {
+      badgesHTML += '<span class="repeat-badge">可重复</span>';
+    }
+    if (task.timeSlot === 'morning') {
+      badgesHTML += '<span class="slot-badge morning">早</span>';
+    } else if (task.timeSlot === 'evening') {
+      badgesHTML += '<span class="slot-badge evening">晚</span>';
+    }
+    // 在 task-desc div 之后添加
+let countHTML = '';
+if (isRepeatable) {
+  const taskCount = Store.getTaskCountToday(task.id);
+  if (taskCount > 0) {
+    countHTML = '<div style="font-size: 0.65rem; color: var(--primary); margin-top: 2px;">今日已完成 ' + taskCount + ' 次</div>';
+  }
+}
+
+return '<button class="' + classes + '" data-task-id="' + task.id + '" ' + (disabled ? 'disabled' : '') + '>' +
+  '<div class="task-icon">' + task.icon + '</div>' +
+  '<div style="width:100%">' +
+    '<div class="task-name-row">' +
+      '<span class="task-name">' + task.name + badgesHTML + '</span>' +
+      checkHTML +
+    '</div>' +
+    '<div class="task-desc">' + task.description + '</div>' +
+    countHTML +
+  '</div>' +
+  '<div style="width:100%;display:flex;align-items:center;justify-content:space-between;">' +
+    '<div class="task-points">+' + task.points + ' 分</div>' +
+    '<div class="manage-btns" onclick="event.stopPropagation()">' +
+      '<button class="manage-btn edit" data-edit-task="' + task.id + '" title="编辑">✏️</button>' +
+      '<button class="manage-btn delete" data-delete-task="' + task.id + '" title="删除">🗑️</button>' +
+    '</div>' +
+  '</div>' +
+'</button>';
+  }).join('');
+
+      // ====== 突发任务相关变量（移到 rewardsHTML 之前） ======
+  // 获取所有日期的突发任务，用于显示
+const allSpecialTasks = [];
+for (const date in Store.state.specialTasks) {
+  const tasks = Store.state.specialTasks[date];
+  if (Array.isArray(tasks)) {
+    allSpecialTasks.push(...tasks.map(t => ({...t, _date: date})));
+  }
+}
+const specialTasksForDate = s.currentDate === formatDate(new Date()) ? allSpecialTasks : Store.getSpecialTasks(s.currentDate);
+  const specialTasksHTML = specialTasksForDate.length > 0 
+    ? specialTasksForDate.map(task => {
+        const classes = ['task-card', 'special-task-card', task.completed ? 'completed' : ''].filter(Boolean).join(' ');
+        const checkHTML = task.completed ? '<div class="task-check" title="已完成">✓</div>' : '';
+        const createdInfo = task.createdDate === formatDate(new Date()) ? '' : '<div style="font-size: 0.65rem; color: var(--muted-foreground); margin-top: 2px;">📅 ' + task.createdDate + ' 布置</div>';
+        return '<button class="' + classes + '" data-special-id="' + task.id + '" data-special-date="' + task._date + '">' +
+          '<div class="task-icon">' + task.icon + '</div>' +
+          '<div style="width:100%">' +
+            '<div class="task-name-row">' +
+              '<span class="task-name">' + task.name + ' <span class="special-badge">⚡突发</span></span>' + checkHTML +
+            '</div>' +
+            '<div class="task-desc">' + task.description + '</div>' +
+            createdInfo +
+          '</div>' +
+          '<div class="task-points">+' + task.points + ' 分</div>' +
+        '</button>';
+      }).join('')
+    : '';
+
+  // 今日待完成的突发任务数量
+  const pendingSpecialCount = specialTasksForDate.filter(t => !t.completed).length;
+
+    // ====== 奖励兑换区域 ======
+    const rewardsHTML = REWARDS.map(reward => {
+      const canAfford = s.totalPoints >= reward.points;
+const disabled = !canAfford;
+
+// 获取今日兑换次数
+const redeemCount = Store.getRedeemCountToday(reward.id);
+const countHTML = redeemCount > 0 
+  ? '<div style="font-size: 0.65rem; color: var(--primary); margin-top: 2px;">今日已兑换 ' + redeemCount + ' 次</div>' 
+  : '';
+
+let limitHint = '';
+    
+    return '<button class="reward-card" data-reward-id="' + reward.id + '" ' + (disabled ? 'disabled' : '') + '>' +
+      '<div class="reward-icon">' + reward.icon + '</div>' +
+      '<div style="width:100%">' +
+        '<div class="reward-name">' + reward.name + '</div>' +
+        '<div class="reward-desc">' + reward.description + '</div>' +
+        countHTML +
+        limitHint +
+      '</div>' +
+      '<div class="reward-points">-' + reward.points + '/' + reward.unit + '</div>' +
+      '<div class="manage-btns" onclick="event.stopPropagation()">' +
+        '<button class="manage-btn edit" data-edit-reward="' + reward.id + '" title="编辑">✏️</button>' +
+        '<button class="manage-btn delete" data-delete-reward="' + reward.id + '" title="删除">🗑️</button>' +
+      '</div>' +
+    '</button>';
+  }).join('');
+  const calendarHeaderHTML = weekDays.map(w => '<div>' + w + '</div>').join('');
+  const calendarDaysHTML = calendarData.map(day => {
+    const isSelected = day.date === s.currentDate;
+    const style = getCalendarDayStyle(day, isSelected);
+    const classes = ['calendar-day', day.isCurrentMonth ? '' : 'other-month', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+    return '<button class="' + classes + '" data-date="' + day.date + '" style="' + style + '" ' + (day.isCurrentMonth ? '' : 'disabled') + '>' + day.day + '</button>';
+  }).join('');
+
+  const showAll = window.__showAllHistory || false;
+  const displayRecords = showAll ? currentDateRecords : currentDateRecords.slice(0, 10);
+  const hasMore = currentDateRecords.length > 10;
+
+  let historyBodyHTML;
+  if (currentDateRecords.length === 0) {
+    historyBodyHTML = '<div class="history-empty">' +
+      '<div class="emoji">📜</div>' +
+      '<div class="text">今天还没有积分记录</div>' +
+      '<div class="hint">完成任务打卡或兑换奖励试试吧～</div>' +
+    '</div>';
+  } else {
+    const itemsHTML = displayRecords.map((r, i) =>
+      '<li class="history-item" style="animation-delay: ' + (i * 0.03) + 's">' +
+        '<div class="history-left">' +
+          '<div class="history-icon ' + r.type + '">' + (r.type === 'earn' ? '+' : '-') + '</div>' +
+          '<div class="history-info">' +
+            '<div class="history-name">' + r.itemName + '</div>' +
+            '<div class="history-time">' + formatTime(r.timestamp) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="history-points ' + r.type + '">' + (r.type === 'earn' ? '+' : '-') + r.points + '</div>' +
+      '</li>'
+    ).join('');
+    const moreHTML = hasMore
+      ? '<div class="history-more"><button class="btn btn-ghost btn-sm" id="history-more-btn">' + (showAll ? '收起 ▲' : '查看更多 ▼') + '</button></div>'
+      : '';
+    historyBodyHTML = '<ul class="history-list">' + itemsHTML + '</ul>' + moreHTML;
+  }
+
+  const html = '<main>' +
+    '<div class="container section">' +
+      '<div class="hero-banner animate-fade-in-up">' +
+        '<a class="nav-btn" href="kebiao/index.html" target="_blank">📅 课表</a>' +
+        '<div class="hero-emoji">📒</div>' +
+        '<h1 class="hero-title">我的积分手账本</h1>' +
+        '<p class="hero-subtitle">每一点努力，都值得被奖励</p>' +
+      '</div>' +
+      '<div class="points-total-card animate-fade-in-up" style="animation-delay: 0.05s">' +
+        '<div class="points-label"><span>👛</span><span>当前总积分</span></div>' +
+        '<div class="points-big tabular" id="total-points">' + s.totalPoints + '</div>' +
+        '<div class="points-unit">分</div>' +
+      '</div>' +
+      '<div class="stats-grid animate-fade-in-up" style="animation-delay: 0.1s">' +
+        '<div class="stat-card">' +
+          '<div class="stat-icon earn">📈</div>' +
+          '<div class="stat-text">' +
+            '<div class="label">今日已赚</div>' +
+            '<div class="value tabular" style="color: var(--primary);">+' + todayStats.earned + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stat-card">' +
+          '<div class="stat-icon spend">📉</div>' +
+          '<div class="stat-text">' +
+            '<div class="label">今日已花</div>' +
+            '<div class="value tabular" style="color: var(--secondary-foreground);">-' + todayStats.spent + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="container section">' +
+      '<div class="date-nav animate-fade-in-up">' +
+        '<button class="btn btn-ghost btn-icon" id="prev-day" aria-label="前一天">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>' +
+        '</button>' +
+        '<div class="date-info">' +
+          '<div class="date-main"><span>📅</span><span>' + dateStr + '</span></div>' +
+          '<div class="date-sub">' + weekday + '</div>' +
+        '</div>' +
+        '<button class="btn btn-ghost btn-icon" id="next-day" aria-label="后一天" ' + (isToday ? 'disabled' : '') + '>' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="date-actions">' +
+        (!isToday ? '<button class="btn btn-outline btn-sm" id="go-today">回到今天</button>' : '') +
+        (isToday ? '<button class="btn btn-outline btn-sm" id="reset-today">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>' +
+          '重置今日打卡</button>' : '') +
+      '</div>' +
+    '</div>' +
+'<div class="container section">' +
+  '<div class="section-title">' +
+    '<h2>📝 今日任务</h2>' +
+    '<span class="count">已完成 ' + completedToday.filter(function(id) { var t = TASKS.find(function(x) { return x.id === id; }); return t && !t.repeatable; }).length + ' / ' + fixedTaskCount + '</span>' +
+    (Store.state.allEarnedToday ? '<span style="margin-left:10px;background:linear-gradient(135deg,#f59e0b,#ec4899);color:white;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;">✨ 全勤达成！+50积分</span>' : '') +
+    '<button class="btn btn-outline btn-sm" id="add-task-btn" style="margin-left:auto;font-size:0.8rem;">+ 添加任务</button>' +
+  '</div>' +
+  '<div class="task-grid" id="task-grid">' + tasksHTML + '</div>' +
+'</div>' +
+
+// ====== 突发任务区域 ======
+'<div class="container section">' +
+  '<div class="section-title">' +
+    '<h2>⚡ 突发任务</h2>' +
+    (pendingSpecialCount > 0 ? '<span class="count">待完成 ' + pendingSpecialCount + ' 项</span>' : '') +
+    '<button class="btn btn-outline btn-sm" id="add-special-task" style="margin-left:auto;font-size:0.8rem;">+ 布置突发任务</button>' +
+  '</div>' +
+  (specialTasksForDate.length > 0 
+    ? '<div class="special-task-list">' + specialTasksHTML + '</div>' 
+    : '<div style="text-align:center;color:var(--muted-foreground);padding:1rem 0;font-size:0.875rem;">还没有突发任务，点击上方按钮布置吧～</div>') +
+'</div>' +
+
+// ====== 奖励兑换（娱乐模块）======
+'<div class="container section">' +
+  '<div class="section-title">' +
+    '<h2>🎁 奖励兑换</h2>' +
+    '<span class="count">当前余额 ' + s.totalPoints + ' 分</span>' +
+    '<button class="btn btn-outline btn-sm" id="add-reward-btn" style="margin-left:auto;font-size:0.8rem;">+ 添加奖励</button>' +
+  '</div>' +
+  '<div class="reward-grid" id="reward-grid">' + rewardsHTML + '</div>' +
+'</div>' +
+
+    '<div class="container section">' +
+      '<div class="stats-section-title"><h2>📊 统计概览</h2></div>' +
+      '<div class="card" style="margin-bottom: 1rem;">' +
+        '<div class="card-header"><div class="card-title">🎯 打卡完成率</div></div>' +
+        '<div class="card-body"><div class="rings-container">' +
+          progressRingHTML(weeklyRate, '本周完成率', 'hsl(120 25% 55%)') +
+          progressRingHTML(monthlyRate, '本月完成率', 'hsl(20 50% 55%)') +
+        '</div></div>' +
+      '</div>' +
+      '<div class="card" style="margin-bottom: 1rem;">' +
+        '<div class="card-header"><div class="card-title">📈 近 7 天积分趋势</div></div>' +
+        '<div class="card-body">' +
+          cssBarChartHTML(last7Days) +
+          '<div class="chart-summary">' +
+            '<span>7日累计赚取：<span class="earn">+' + totalEarn7 + '</span></span>' +
+            '<span>7日累计花费：<span class="spend">-' + totalSpend7 + '</span></span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="card-header"><div class="card-title">📅 ' + monthLabel + '</div></div>' +
+        '<div class="card-body">' +
+          '<div class="calendar-grid-header">' + calendarHeaderHTML + '</div>' +
+          '<div class="calendar-grid" id="calendar-grid">' + calendarDaysHTML + '</div>' +
+          '<div class="calendar-legend">' +
+            '<span>完成度</span>' +
+            '<span class="colors">' +
+              '<span class="color-block" style="background: hsl(40 20% 92% / 0.3);"></span>' +
+              '<span class="color-block" style="background: var(--primary/20);"></span>' +
+              '<span class="color-block" style="background: var(--primary/40);"></span>' +
+              '<span class="color-block" style="background: var(--primary/60);"></span>' +
+              '<span class="color-block" style="background: var(--primary/80);"></span>' +
+            '</span>' +
+            '<span>高</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="container section">' +
+      '<div class="card">' +
+'<div class="history-header">' +
+  '<div style="font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">' +
+    '<span>📜</span><span>积分记录</span>' +
+    
+  '</div>' +
+  '<div style="display: flex; gap: 0.5rem; flex-shrink: 0;">' +
+    '<button class="btn btn-primary btn-sm" id="manual-add-btn">+ 添加积分</button>' +
+    '<button class="btn btn-outline btn-sm" id="export-btn">' +
+      '<span style="font-size: 0.875rem; margin-right: 2px;">⬇️</span>导出全部' +
+    '</button>' +
+    '<button class="btn btn-outline btn-sm" id="import-btn">' +
+      '<span style="font-size: 0.875rem; margin-right: 2px;">⬆️</span>导入数据' +
+    '</button>' +
+  '</div>' +
+  '</div>' +
+  historyBodyHTML +
+'<div style="text-align: center; padding: 0.5rem 0.75rem; color: var(--muted-foreground); font-size: 0.875rem; border-top: 1px solid hsl(30 15% 88% / 0.4);">' +
+  s.currentDate + ' · 共 ' + currentDateRecords.length + ' 条记录' +
+'</div>' +  
+  '</div>' +  
+'</div>' +   
+
+    '<footer>' +  
+      '<p>积分制生活规划 · 用热爱填满每一天 💚</p>' +
+      '<p>数据保存在本地浏览器，清除浏览器数据会丢失</p>' +
+    '</footer>' +
+  '</main>';
+
+  document.getElementById('root').innerHTML = html;
+  attachEventListeners();
+  renderDialogs();
+}
+
+// ============ 事件绑定 ============
+function attachEventListeners() {
+  var prevBtn = document.getElementById('prev-day');
+  if (prevBtn) prevBtn.addEventListener('click', function() { Store.goPrevDay(); });
+
+  var nextBtn = document.getElementById('next-day');
+  if (nextBtn) nextBtn.addEventListener('click', function() { Store.goNextDay(); });
+
+  var goTodayBtn = document.getElementById('go-today');
+  if (goTodayBtn) goTodayBtn.addEventListener('click', function() { Store.goToday(); });
+
+  var resetBtn = document.getElementById('reset-today');
+  if (resetBtn) resetBtn.addEventListener('click', function() { showResetDialog(); });
+
+  var taskGrid = document.getElementById('task-grid');
+  if (taskGrid) {
+    taskGrid.querySelectorAll('.task-card').forEach(function(card) {
+      card.addEventListener('click', function(e) {
+        var taskId = card.dataset.taskId;
+        var task = TASKS.find(function(t) { return t.id === taskId; });
+        if (!task) return;
+        
+        // 检查是否点击了管理按钮
+        var editBtn = e.target.closest('[data-edit-task]');
+        var deleteBtn = e.target.closest('[data-delete-task]');
+        if (editBtn) { e.stopPropagation(); showEditTaskDialog(editBtn.dataset.editTask); return; }
+        if (deleteBtn) { e.stopPropagation(); showDeleteTaskConfirm(deleteBtn.dataset.deleteTask); return; }
+        
+        var isToday = Store.isToday();
+        var completedToday = Store.completedToday();
+        if (completedToday.includes(taskId) && !task.repeatable) return;
+        if (!isToday) return;
+        var result = Store.checkinTask(task);
+        if (result.success) {
+          var rect = card.getBoundingClientRect();
+          var gridRect = taskGrid.getBoundingClientRect();
+          var x = rect.left - gridRect.left + rect.width / 2;
+          var y = rect.top - gridRect.top;
+          var floatEl = document.createElement('div');
+          floatEl.className = 'float-text';
+          floatEl.style.left = x + 'px';
+          floatEl.style.top = y + 'px';
+          floatEl.textContent = '+' + task.points;
+          taskGrid.appendChild(floatEl);
+          setTimeout(function() { floatEl.remove(); }, 900);
+          Toast.success(result.message);
+        } else {
+          Toast.error(result.message);
+        }
+      });
+    });
+  }
+
+  var addTaskBtn = document.getElementById('add-task-btn');
+  if (addTaskBtn) addTaskBtn.addEventListener('click', function() { showEditTaskDialog(null); });
+
+  // 突发任务卡片点击
+document.querySelectorAll('.special-task-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      // 已完成的任务不响应点击
+      if (card.classList.contains('completed')) {
+        Toast.success('任务已完成');
+        return;
+      }
+      var taskId = card.dataset.specialId;
+      var taskDate = card.dataset.specialDate;
+      var result = Store.completeSpecialTask(taskDate, taskId);
+      if (result.success) {
+        Toast.success(result.message);
+        render();
+      } else {
+        Toast.error(result.message);
+      }
+    });
+  });
+
+  // 布置突发任务按钮
+  var addSpecialBtn = document.getElementById('add-special-task');
+  if (addSpecialBtn) {
+    addSpecialBtn.addEventListener('click', function() {
+      showAddSpecialTaskDialog();
+    });
+  }
+
+  var rewardGrid = document.getElementById('reward-grid');
+  if (rewardGrid) {
+    rewardGrid.querySelectorAll('.reward-card').forEach(function(card) {
+      card.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('[data-edit-reward]');
+        var deleteBtn = e.target.closest('[data-delete-reward]');
+        if (editBtn) { e.stopPropagation(); showEditRewardDialog(editBtn.dataset.editReward); return; }
+        if (deleteBtn) { e.stopPropagation(); showDeleteRewardConfirm(deleteBtn.dataset.deleteReward); return; }
+        
+        var rewardId = card.dataset.rewardId;
+        var reward = REWARDS.find(function(r) { return r.id === rewardId; });
+        if (!reward) return;
+        var result = Store.redeemReward(reward);
+        if (result.success) Toast.success(result.message);
+        else Toast.error(result.message);
+      });
+    });
+  }
+
+  var addRewardBtn = document.getElementById('add-reward-btn');
+  if (addRewardBtn) addRewardBtn.addEventListener('click', function() { showEditRewardDialog(null); });
+
+  var calendarGrid = document.getElementById('calendar-grid');
+  if (calendarGrid) {
+    calendarGrid.querySelectorAll('.calendar-day').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (btn.disabled) return;
+        Store.setCurrentDate(btn.dataset.date);
+      });
+    });
+  }
+  var exportBtn = document.getElementById('export-btn');
+  if (exportBtn) exportBtn.addEventListener('click', function() {
+    var result = Store.exportRecords();
+    if (result.success) Toast.success(result.message);
+    else Toast.error(result.message);
+  });
+
+  var importBtn = document.getElementById('import-btn');
+  if (importBtn) importBtn.addEventListener('click', function() {
+    Store.importRecords().then(function(result) {
+      if (result.success) {
+        Toast.success(result.message);
+        render();
+      } else {
+        Toast.error(result.message);
+      }
+    });
+  });
+    var moreBtn = document.getElementById('history-more-btn');
+  if (moreBtn) moreBtn.addEventListener('click', function() {
+    window.__showAllHistory = !window.__showAllHistory;
+    render();
+  });
+
+  var manualBtn = document.getElementById('manual-add-btn');
+  if (manualBtn) manualBtn.addEventListener('click', function() { showManualAddDialog(); });
+}
+
+// ============ 手动添加积分对话框 ============
+function showManualAddDialog() {
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header">' +
+      '<div class="dialog-icon">➕</div>' +
+      '<div class="dialog-title">手动添加积分</div>' +
+      '<div class="dialog-desc">记录非任务相关的积分变动</div>' +
+    '</div>' +
+    '<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">' +
+      '<div>' +
+        '<label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; color: var(--foreground);">积分类型</label>' +
+        '<div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">' +
+          '<label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem; border: 1.5px solid var(--border); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; justify-content: center; background: var(--primary/10); color: var(--primary);">' +
+            '<input type="radio" name="manual-type" value="earn" checked style="accent-color: var(--primary);">赚取' +
+          '</label>' +
+          '<label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem; border: 1.5px solid var(--border); border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; justify-content: center;">' +
+            '<input type="radio" name="manual-type" value="spend" style="accent-color: var(--primary);">花费' +
+          '</label>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; color: var(--foreground);">记录名称</label>' +
+        '<input type="text" id="manual-name" placeholder="例如：加班奖励" maxlength="30" style="width: 100%; padding: 0.625rem 0.75rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.9375rem; background: var(--background); color: var(--foreground); outline: none;">' +
+      '</div>' +
+      '<div>' +
+        '<label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; color: var(--foreground);">积分数</label>' +
+        '<input type="number" id="manual-points" min="1" max="9999" placeholder="请输入积分数" style="width: 100%; padding: 0.625rem 0.75rem; border: 1.5px solid var(--border); border-radius: 0.5rem; font-size: 0.9375rem; background: var(--background); color: var(--foreground); outline: none;">' +
+      '</div>' +
+    '</div>' +
+    '<div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;">' +
+      '<button class="btn btn-outline" id="manual-cancel">取消</button>' +
+      '<button class="btn btn-primary" id="manual-confirm">确认添加</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#manual-cancel').addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#manual-name').focus();
+  overlay.querySelector('#manual-confirm').addEventListener('click', function() {
+    var nameInput = overlay.querySelector('#manual-name');
+    var pointsInput = overlay.querySelector('#manual-points');
+    var typeRadio = overlay.querySelector('input[name="manual-type"]:checked');
+    var name = nameInput.value.trim();
+    var points = parseInt(pointsInput.value, 10);
+    var type = typeRadio ? typeRadio.value : 'earn';
+    if (!name) { Toast.error('请输入记录名称'); nameInput.focus(); return; }
+    if (!points || points <= 0) { Toast.error('请输入有效积分数'); pointsInput.focus(); return; }
+    var result = Store.addManualRecord(name, points, type);
+    overlay.remove();
+    if (result.success) Toast.success(result.message);
+    else Toast.error(result.message);
+  });
+}
+// ============ 布置突发任务对话框 ============
+function showAddSpecialTaskDialog() {
+  var today = new Date();
+  var tomorrow = new Date(today.getTime() + 86400000);
+  var dayAfterTomorrow = new Date(today.getTime() + 86400000 * 2);
+  
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div style="font-size:2rem;text-align:center;margin-bottom:0.5rem;">⚡</div>' +
+    '<h2 style="font-size:1.125rem;font-weight:700;text-align:center;margin-bottom:1rem;">布置突发任务</h2>' +
+    '<div class="dialog-form-group">' +
+      '<label>选择日期</label>' +
+      '<select id="special-date" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '<option value="' + formatDate(tomorrow) + '">明天 ' + formatDate(tomorrow) + '</option>' +
+        '<option value="' + formatDate(dayAfterTomorrow) + '">后天 ' + formatDate(dayAfterTomorrow) + '</option>' +
+        '<option value="' + formatDate(new Date(today.getTime() + 86400000 * 7)) + '">一周后 ' + formatDate(new Date(today.getTime() + 86400000 * 7)) + '</option>' +
+        '<option value="custom">自定义日期...</option>' +
+      '</select>' +
+      '<input type="date" id="special-date-custom" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);margin-top:0.5rem;display:none;" min="' + formatDate(today) + '">' +
+    '</div>' +
+    '<div class="dialog-form-group">' +
+      '<label>任务名称</label>' +
+      '<input type="text" id="special-name" placeholder="例如：拉橡皮筋50次" maxlength="30">' +
+    '</div>' +
+    '<div class="dialog-form-group">' +
+      '<label>奖励积分</label>' +
+      '<input type="number" id="special-points" min="1" max="999" placeholder="完成后获得的积分">' +
+    '</div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;">' +
+      '<button class="btn btn-outline" id="special-cancel">取消</button>' +
+      '<button class="btn btn-primary" id="special-confirm">确认添加</button>' +
+    '</div>' +
+  '</div>';
+  
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#special-cancel').addEventListener('click', function() { overlay.remove(); });
+  
+  // 日期选择切换
+  var dateSelect = overlay.querySelector('#special-date');
+  var dateCustom = overlay.querySelector('#special-date-custom');
+  dateSelect.addEventListener('change', function() {
+    if (this.value === 'custom') {
+      dateCustom.style.display = 'block';
+    } else {
+      dateCustom.style.display = 'none';
+    }
+  });
+  
+  overlay.querySelector('#special-name').focus();
+  
+  overlay.querySelector('#special-confirm').addEventListener('click', function() {
+    var name = overlay.querySelector('#special-name').value.trim();
+    var points = parseInt(overlay.querySelector('#special-points').value, 10);
+    if (!name) { Toast.error('请输入任务名称'); return; }
+    if (!points || points <= 0) { Toast.error('请输入有效积分'); return; }
+    
+    // 获取选择的日期
+    var selectedDate = dateSelect.value;
+    if (selectedDate === 'custom') {
+      selectedDate = dateCustom.value;
+      if (!selectedDate) { Toast.error('请选择日期'); return; }
+    }
+    
+    var result = Store.addSpecialTask(selectedDate, {
+      name: name,
+      points: points,
+      description: '',
+      icon: '⚡'
+    });
+    
+    if (result.success) {
+      overlay.remove();
+      Toast.success('已为 ' + selectedDate + ' 布置突发任务！');
+      render();
+    } else {
+      Toast.error(result.message);
+    }
+  });
+}
+
+// ============ 重置对话框 ============
+function showResetDialog() {
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem;">确认重置今日打卡？</h2>' +
+    '<p style="font-size: 0.875rem; color: var(--muted-foreground); margin-bottom: 1.25rem; line-height: 1.6;">' +
+      '重置后，今天所有已完成的任务打卡将被清除，已获得的积分会回退。<br>奖励兑换记录不受影响。' +
+    '</p>' +
+    '<div style="display: flex; justify-content: flex-end; gap: 0.5rem;">' +
+      '<button class="btn btn-outline" id="dialog-cancel">取消</button>' +
+      '<button class="btn btn-primary" id="dialog-confirm">确认重置</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#dialog-cancel').addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#dialog-confirm').addEventListener('click', function() {
+    var refunded = Store.resetToday();
+    overlay.remove();
+    if (refunded > 0) Toast.success('已重置今日打卡，回退 ' + refunded + ' 积分');
+    else Toast.info('今日还没有打卡记录哦～');
+  });
+}
+
+// ============ 欢迎引导对话框 ============
+function showOnboarding() {
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header">' +
+      '<div class="dialog-icon">✨</div>' +
+      '<div class="dialog-title">欢迎来到积分手账本</div>' +
+      '<div class="dialog-desc">用游戏化的方式，让自律变得像玩一样简单～</div>' +
+    '</div>' +
+    '<div class="rule-list">' +
+      '<div class="rule-item"><div class="rule-icon">✅</div><div><div class="rule-title">打卡赚积分</div><div class="rule-desc">完成日常任务打卡，每完成一个获得对应积分</div></div></div>' +
+      '<div class="rule-item"><div class="rule-icon">🎁</div><div><div class="rule-title">兑换花积分</div><div class="rule-desc">用攒下的积分兑换追剧、奶茶等娱乐奖励</div></div></div>' +
+      '<div class="rule-item"><div class="rule-icon">🔄</div><div><div class="rule-title">每日重置</div><div class="rule-desc">每天 0 点自动重置打卡状态，积分累计保留</div></div></div>' +
+    '</div>' +
+    '<div style="margin-top: 1.25rem;">' +
+      '<button class="btn btn-primary" id="onboarding-start" style="width: 100%; height: 2.75rem; font-size: 1rem;">开始使用</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { Store.finishOnboarding(); overlay.remove(); });
+  overlay.querySelector('#onboarding-start').addEventListener('click', function() { Store.finishOnboarding(); overlay.remove(); });
+}
+
+// ============ 任务编辑/新增对话框 ============
+function showEditTaskDialog(taskId) {
+  const isEdit = !!taskId;
+  const task = isEdit ? TASKS.find(function(t) { return t.id === taskId; }) : null;
+  if (isEdit && !task) return;
+  
+  const icons = ['✅','🌅','🌙','💻','📚','🪥','🧴','🍐','🏃','🎯','💊','🎨','🏋️','🧘','🎵','📖','💪','🧠','☕','🌱'];
+  const iconOptions = icons.map(function(i) {
+    return '<button type="button" class="icon-opt" data-icon="' + i + '" style="width:2rem;height:2rem;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:1rem;' + (task && task.icon === i ? 'border-color:var(--primary);background:var(--primary/10);' : '') + '">' + i + '</button>';
+  }).join('');
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header">' +
+      '<div class="dialog-icon">' + (isEdit ? '✏️' : '➕') + '</div>' +
+      '<div class="dialog-title">' + (isEdit ? '编辑任务' : '添加任务') + '</div>' +
+      '<div class="dialog-desc">设置任务名称、积分奖励和属性</div>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">' +
+      '<div class="dialog-form-group"><label>任务名称</label><input type="text" id="task-name" placeholder="例如：早起" maxlength="20" value="' + (task ? task.name : '') + '"></div>' +
+      '<div class="dialog-form-group"><label>积分奖励</label><input type="number" id="task-points" min="1" max="999" placeholder="完成后获得的积分" value="' + (task ? task.points : '10') + '"></div>' +
+      '<div class="dialog-form-group"><label>任务描述</label><input type="text" id="task-desc" placeholder="可选" maxlength="50" value="' + (task ? (task.description || '') : '') + '"></div>' +
+      '<div class="dialog-form-group">' +
+        '<label>选择图标</label>' +
+        '<div id="icon-picker" style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.375rem;">' + iconOptions + '</div>' +
+      '</div>' +
+      '<div class="dialog-form-group">' +
+        '<label>任务属性</label>' +
+        '<div style="display:flex;gap:0.5rem;margin-top:0.375rem;">' +
+          '<label style="flex:1;display:flex;align-items:center;gap:0.375rem;padding:0.5rem;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.8125rem;justify-content:center;">' +
+            '<input type="checkbox" id="task-repeatable" style="accent-color:var(--primary);"' + (task && task.repeatable ? ' checked' : '') + ' 可重复打卡' +
+          '</label>' +
+          '<select id="task-timeslot" style="flex:1;padding:0.5rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.8125rem;background:var(--background);">' +
+            '<option value="">无时间段</option>' +
+            '<option value="morning"' + (task && task.timeSlot === 'morning' ? ' selected' : '') + '>早间</option>' +
+            '<option value="evening"' + (task && task.timeSlot === 'evening' ? ' selected' : '') + '>晚间</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="dialog-footer">' +
+      '<button class="btn btn-outline" id="task-cancel">取消</button>' +
+      '<button class="btn btn-primary" id="task-confirm">' + (isEdit ? '保存' : '添加') + '</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#task-cancel').addEventListener('click', function() { overlay.remove(); });
+  
+  var selectedIcon = task ? task.icon : '✅';
+  overlay.querySelectorAll('.icon-opt').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      selectedIcon = btn.dataset.icon;
+      overlay.querySelectorAll('.icon-opt').forEach(function(b) {
+        b.style.borderColor = 'var(--border)';
+        b.style.background = 'white';
+      });
+      btn.style.borderColor = 'var(--primary)';
+      btn.style.background = 'var(--primary/10)';
+    });
+  });
+  
+  overlay.querySelector('#task-name').focus();
+  overlay.querySelector('#task-confirm').addEventListener('click', function() {
+    var name = overlay.querySelector('#task-name').value.trim();
+    var points = parseInt(overlay.querySelector('#task-points').value, 10);
+    var desc = overlay.querySelector('#task-desc').value.trim();
+    var repeatable = overlay.querySelector('#task-repeatable').checked;
+    var timeSlot = overlay.querySelector('#task-timeslot').value || null;
+    
+    if (!name) { Toast.error('请输入任务名称'); overlay.querySelector('#task-name').focus(); return; }
+    if (!points || points <= 0) { Toast.error('请输入有效积分'); overlay.querySelector('#task-points').focus(); return; }
+    
+    if (isEdit) {
+      Store.updateTask(taskId, {
+        name: name, points: points, description: desc,
+        icon: selectedIcon, repeatable: repeatable, timeSlot: timeSlot
+      });
+      Toast.success('任务已更新');
+    } else {
+      Store.addTask({
+        name: name, points: points, description: desc,
+        icon: selectedIcon, repeatable: repeatable, timeSlot: timeSlot
+      });
+      Toast.success('任务已添加');
+    }
+    overlay.remove();
+  });
+}
+
+// ============ 任务删除确认 ============
+function showDeleteTaskConfirm(taskId) {
+  const task = TASKS.find(function(t) { return t.id === taskId; });
+  if (!task) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header"><div class="dialog-icon">🗑️</div><div class="dialog-title">删除任务</div>' +
+    '<div class="dialog-desc">确定要删除任务「' + task.name + '」吗？<br>该任务的历史打卡记录和对应积分也会一并清除。</div></div>' +
+    '<div class="dialog-footer"><button class="btn btn-outline" id="del-cancel">取消</button>' +
+    '<button class="btn btn-primary" style="background:var(--destructive);" id="del-confirm">删除</button></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#del-cancel').addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#del-confirm').addEventListener('click', function() {
+    Store.deleteTask(taskId);
+    Toast.success('任务已删除');
+    overlay.remove();
+  });
+}
+
+// ============ 奖励编辑/新增对话框 ============
+function showEditRewardDialog(rewardId) {
+  const isEdit = !!rewardId;
+  const reward = isEdit ? REWARDS.find(function(r) { return r.id === rewardId; }) : null;
+  if (isEdit && !reward) return;
+  
+  const icons = ['🎬','📺','📖','🎮','🧋','🍜','🧹','🍪','🍫','🍱','☕','🍰','🎵','🏖️','🛒','🎁','⭐','🎲','🍦','🎤'];
+  const iconOptions = icons.map(function(i) {
+    return '<button type="button" class="icon-opt" data-icon="' + i + '" style="width:2rem;height:2rem;border:1.5px solid var(--border);border-radius:8px;background:white;cursor:pointer;font-size:1rem;' + (reward && reward.icon === i ? 'border-color:var(--primary);background:var(--primary/10);' : '') + '">' + i + '</button>';
+  }).join('');
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header">' +
+      '<div class="dialog-icon">' + (isEdit ? '✏️' : '🎁') + '</div>' +
+      '<div class="dialog-title">' + (isEdit ? '编辑奖励' : '添加奖励') + '</div>' +
+      '<div class="dialog-desc">设置奖励名称、积分消耗和单位</div>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">' +
+      '<div class="dialog-form-group"><label>奖励名称</label><input type="text" id="reward-name" placeholder="例如：奶茶" maxlength="20" value="' + (reward ? reward.name : '') + '"></div>' +
+      '<div class="dialog-form-group"><label>所需积分</label><input type="number" id="reward-points" min="1" max="9999" placeholder="兑换需要的积分" value="' + (reward ? reward.points : '10') + '"></div>' +
+      '<div class="dialog-form-group"><label>描述</label><input type="text" id="reward-desc" placeholder="可选" maxlength="50" value="' + (reward ? (reward.description || '') : '') + '"></div>' +
+      '<div class="dialog-form-group"><label>单位</label><input type="text" id="reward-unit" placeholder="例如：杯、次、小时" maxlength="10" value="' + (reward ? (reward.unit || '次') : '次') + '"></div>' +
+      '<div class="dialog-form-group"><label>选择图标</label><div id="reward-icon-picker" style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.375rem;">' + iconOptions + '</div></div>' +
+    '</div>' +
+    '<div class="dialog-footer">' +
+      '<button class="btn btn-outline" id="reward-cancel">取消</button>' +
+      '<button class="btn btn-primary" id="reward-confirm">' + (isEdit ? '保存' : '添加') + '</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#reward-cancel').addEventListener('click', function() { overlay.remove(); });
+  
+  var selectedIcon = reward ? reward.icon : '🎁';
+  overlay.querySelectorAll('.icon-opt').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      selectedIcon = btn.dataset.icon;
+      overlay.querySelectorAll('.icon-opt').forEach(function(b) {
+        b.style.borderColor = 'var(--border)';
+        b.style.background = 'white';
+      });
+      btn.style.borderColor = 'var(--primary)';
+      btn.style.background = 'var(--primary/10)';
+    });
+  });
+  
+  overlay.querySelector('#reward-name').focus();
+  overlay.querySelector('#reward-confirm').addEventListener('click', function() {
+    var name = overlay.querySelector('#reward-name').value.trim();
+    var points = parseInt(overlay.querySelector('#reward-points').value, 10);
+    var desc = overlay.querySelector('#reward-desc').value.trim();
+    var unit = overlay.querySelector('#reward-unit').value.trim() || '次';
+    
+    if (!name) { Toast.error('请输入奖励名称'); overlay.querySelector('#reward-name').focus(); return; }
+    if (!points || points <= 0) { Toast.error('请输入有效积分'); overlay.querySelector('#reward-points').focus(); return; }
+    
+    if (isEdit) {
+      Store.updateReward(rewardId, { name: name, points: points, description: desc, icon: selectedIcon, unit: unit });
+      Toast.success('奖励已更新');
+    } else {
+      Store.addReward({ name: name, points: points, description: desc, icon: selectedIcon, unit: unit });
+      Toast.success('奖励已添加');
+    }
+    overlay.remove();
+  });
+}
+
+// ============ 奖励删除确认 ============
+function showDeleteRewardConfirm(rewardId) {
+  const reward = REWARDS.find(function(r) { return r.id === rewardId; });
+  if (!reward) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
+    '<div class="dialog-header"><div class="dialog-icon">🗑️</div><div class="dialog-title">删除奖励</div>' +
+    '<div class="dialog-desc">确定要删除奖励「' + reward.name + '」吗？<br>该奖励的历史兑换记录将被清除，对应积分会退回。</div></div>' +
+    '<div class="dialog-footer"><button class="btn btn-outline" id="del-cancel">取消</button>' +
+    '<button class="btn btn-primary" style="background:var(--destructive);" id="del-confirm">删除</button></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#del-cancel').addEventListener('click', function() { overlay.remove(); });
+  overlay.querySelector('#del-confirm').addEventListener('click', function() {
+    Store.deleteReward(rewardId);
+    Toast.success('奖励已删除');
+    overlay.remove();
+  });
+}
+
+function renderDialogs() {
+  if (!Store.state.onboarded) setTimeout(showOnboarding, 300);
+}
+
+// ============ 启动 ============
+Store.init();
+Store.subscribe(render);
+render();
+</script>
+</body>
+</html>
