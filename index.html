@@ -26,6 +26,31 @@ body {
   color: white;
   padding: 16px;
   text-align: center;
+  position: relative;
+}
+.header .nav-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.25);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.header .nav-btn:hover {
+  background: rgba(255,255,255,0.4);
+  transform: translateY(-50%) translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 .header h1 { font-size: 18px; margin-bottom: 8px; }
 .header .info { font-size: 12px; opacity: 0.9; }
@@ -392,6 +417,7 @@ body {
   body { padding: 0; }
   .container { border-radius: 0; min-height: 100vh; }
   .header h1 { font-size: 16px; }
+  .header .nav-btn { font-size: 11px; padding: 4px 10px; right: 8px; }
   .controls { padding: 10px; gap: 6px; }
   .btn { padding: 6px 12px; font-size: 12px; }
   .timetable { padding: 8px; }
@@ -450,6 +476,7 @@ body {
   <div class="header">
     <input type="text" class="editable-title" id="editableTitle" value="燕京理工学院 计科（专升本）2602" title="点击修改标题">
     <input type="text" class="editable-title" id="editableInfo" value="2026-2027学年第一学期" style="font-size:12px;min-width:150px;" title="点击修改学年信息">
+    <a class="nav-btn" href="../IntegralSystem.html" target="_blank">📒 积分手账本</a>
   </div>
   <div class="controls">
     <button class="btn btn-secondary" onclick="changeDay(-1)" title="前一天">◀ 前一天</button>
