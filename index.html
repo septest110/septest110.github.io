@@ -988,6 +988,9 @@ function parseDateValue(val) {
   }
   if (typeof val === 'string') {
     var s = val.trim();
+    s = s.replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-');
+    s = s.replace(/[\u2018\u2019]/g, "'");
+    s = s.replace(/[\u201C\u201D]/g, '"');
     var d = new Date(s);
     if (!isNaN(d.getTime())) return d;
     var m = s.match(/^(\d{4})[\/\-\.年](\d{1,2})[\/\-\.月](\d{1,2})/);
@@ -1027,7 +1030,11 @@ function loadSavedSchedule() {
   const saved = localStorage.getItem('customSchedule');
   if (saved) {
     try {
-      const data = JSON.parse(saved);
+      const cleanedSaved = saved
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"');
+      const data = JSON.parse(cleanedSaved);
       if (data && Array.isArray(data.courses)) {
         // 恢复标题信息（如果有）
         if (data.info) {
@@ -1090,7 +1097,12 @@ function importSchedule(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const data = JSON.parse(e.target.result);
+      const rawText = e.target.result;
+      const cleanedText = rawText
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"');
+      const data = JSON.parse(cleanedText);
       
       // 验证数据格式
       if (!Array.isArray(data.courses)) {
