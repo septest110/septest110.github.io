@@ -474,7 +474,7 @@ body {
 <body>
 <div class="container">
   <div class="header">
-    <input type="text" class="editable-title" id="editableTitle" value="燕京理工学院 计科（专升本）2602" title="点击修改标题">
+    <h1>课表</h1>
     <input type="text" class="editable-title" id="editableInfo" value="2026-2027学年第一学期" style="font-size:12px;min-width:150px;" title="点击修改学年信息">
     <a class="nav-btn" href="../IntegralSystem.html" target="_blank">📒 积分手账本</a>
   </div>
@@ -595,7 +595,7 @@ let calendarYear = currentDate.getFullYear();
 
 // 保存标题信息到localStorage
 function saveTitleInfo() {
-  const title = document.getElementById('editableTitle').value;
+  const title = '课表';
   const info = document.getElementById('editableInfo').value;
   let data = {};
   const saved = localStorage.getItem('customSchedule');
@@ -614,8 +614,6 @@ function saveTitleInfo() {
 // 初始化
 function init() {
   // 绑定标题输入保存事件
-  document.getElementById('editableTitle').addEventListener('change', saveTitleInfo);
-  document.getElementById('editableTitle').addEventListener('blur', saveTitleInfo);
   document.getElementById('editableInfo').addEventListener('change', saveTitleInfo);
   document.getElementById('editableInfo').addEventListener('blur', saveTitleInfo);
   
@@ -981,6 +979,27 @@ function goToday() {
 
 // ============ 课表导入/导出功能 ============
 
+function parseDateValue(val) {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val) ? null : val;
+  if (typeof val === 'number') {
+    var d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof val === 'string') {
+    var s = val.trim();
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) return d;
+    var m = s.match(/^(\d{4})[\/\-\.年](\d{1,2})[\/\-\.月](\d{1,2})/);
+    if (m) {
+      d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+  return null;
+}
+
 // 默认课表数据（用于恢复）
 const defaultCourses = [
   { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408教室' },
@@ -1010,11 +1029,7 @@ function loadSavedSchedule() {
     try {
       const data = JSON.parse(saved);
       if (data && Array.isArray(data.courses)) {
-        // 更新全局课程数据
-        // 恢复标题和信息（如果有）
-        if (data.title) {
-          document.getElementById('editableTitle').value = data.title;
-        }
+        // 恢复标题信息（如果有）
         if (data.info) {
           document.getElementById('editableInfo').value = data.info;
         }
@@ -1022,12 +1037,12 @@ function loadSavedSchedule() {
         for (let key in data) {
           if (key === 'courses' || key === 'title' || key === 'info') continue;
           if (key === 'semesterStart' || key === 'firstWeekMonday') {
-            // 日期需要特殊处理
+            var parsed = parseDateValue(data[key]);
+            if (!parsed) continue;
             if (key === 'semesterStart') {
-              semesterStart.setTime(new Date(data[key]).getTime());
+              semesterStart.setTime(parsed.getTime());
             } else if (key === 'firstWeekMonday') {
-              firstWeekMonday.setTime(new Date(data[key]).getTime());
-              // 重新计算周起始日期
+              firstWeekMonday.setTime(parsed.getTime());
               weekStartDates.length = 0;
               for (let i = 0; i < 20; i++) {
                 const d = new Date(firstWeekMonday);
@@ -1051,7 +1066,7 @@ function loadSavedSchedule() {
 // 导出课表
 function exportSchedule() {
   const exportData = {
-    title: document.getElementById('editableTitle').value,
+    title: '课表',
     info: document.getElementById('editableInfo').value,
     semesterStart: semesterStart.toISOString(),
     firstWeekMonday: firstWeekMonday.toISOString(),
@@ -1098,9 +1113,6 @@ function importSchedule(event) {
       }
       
       // 应用导入的数据
-      if (data.title) {
-        document.getElementById('editableTitle').value = data.title;
-      }
       if (data.info) {
         document.getElementById('editableInfo').value = data.info;
       }
@@ -1132,16 +1144,22 @@ function importSchedule(event) {
       
       // 更新日期配置
       if (data.firstWeekMonday) {
-        firstWeekMonday.setTime(new Date(data.firstWeekMonday).getTime());
-        weekStartDates.length = 0;
-        for (let i = 0; i < 20; i++) {
-          const d = new Date(firstWeekMonday);
-          d.setDate(d.getDate() + i * 7);
-          weekStartDates.push(d);
+        var parsed = parseDateValue(data.firstWeekMonday);
+        if (parsed) {
+          firstWeekMonday.setTime(parsed.getTime());
+          weekStartDates.length = 0;
+          for (let i = 0; i < 20; i++) {
+            const d = new Date(firstWeekMonday);
+            d.setDate(d.getDate() + i * 7);
+            weekStartDates.push(d);
+          }
         }
       }
       if (data.semesterStart) {
-        semesterStart.setTime(new Date(data.semesterStart).getTime());
+        var parsed2 = parseDateValue(data.semesterStart);
+        if (parsed2) {
+          semesterStart.setTime(parsed2.getTime());
+        }
       }
       
       // 更新课程数据
@@ -1150,7 +1168,7 @@ function importSchedule(event) {
       
       // 保存到localStorage
       const saveData = {
-        title: document.getElementById('editableTitle').value,
+        title: '课表',
         info: document.getElementById('editableInfo').value,
         semesterStart: semesterStart.toISOString(),
         firstWeekMonday: firstWeekMonday.toISOString(),
@@ -1205,7 +1223,6 @@ function resetSchedule() {
   defaultCourses.forEach(c => courses.push(c));
   
   // 更新标题
-  document.getElementById('editableTitle').value = '燕京理工学院 计科（专升本）2602';
   document.getElementById('editableInfo').value = '2026-2027学年第一学期';
   
   // 重新渲染
