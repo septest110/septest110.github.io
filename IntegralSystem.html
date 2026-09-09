@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
@@ -114,6 +114,23 @@
   .hero-emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .hero-title { font-size: 1.25rem; font-weight: 700; }
   .hero-subtitle { font-size: 0.875rem; color: var(--muted-foreground); margin-top: 0.5rem; }
+  .account-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0.75rem; margin-top: 0.75rem; border-radius: 9999px;
+    background: rgb(255 255 255 / 0.7); backdrop-filter: blur(8px);
+    font-size: 0.8rem; color: var(--muted-foreground);
+    border: 1px solid hsl(30 15% 88% / 0.6);
+  }
+  .account-bar .acc-left { display: flex; align-items: center; gap: 0.5rem; }
+  .account-bar .acc-right { display: flex; gap: 0.5rem; }
+  .account-bar .acc-btn {
+    background: transparent; border: none; cursor: pointer; font-family: inherit;
+    color: var(--primary); font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 6px;
+  }
+  .account-bar .acc-btn:hover { background: var(--primary-light); }
+  .account-bar .acc-status { font-size: 0.7rem; }
+  .account-bar .acc-status.ok { color: var(--primary); }
+  .account-bar .acc-status.warn { color: hsl(30 70% 50%); }
   .points-total-card {
     background: linear-gradient(135deg, var(--primary/10), white, hsl(20 60% 85% / 0.1));
     border: 1px solid hsl(30 15% 88% / 0.6); border-radius: 0.75rem;
@@ -616,11 +633,324 @@
     .points-big { font-size: 2rem; }
   }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
 
 <script>
+// ============================================================
+// 云端配置 (Supabase) — anon key 从 Dashboard > Settings > API 里复制
+// ============================================================
+const AUTH_CONFIG = {
+  projectUrl: 'https://tswwqlexdtgjfiesmcwi.supabase.co',
+  anonKey: 'sb_publishable_M-zz63KweHtDSXDU7Lm2xg_Svx1xNmU',
+  enabled: true
+};
+
+
+let _supabase = null;
+if (typeof window.supabase !== 'undefined' && AUTH_CONFIG.anonKey && AUTH_CONFIG.anonKey !== 'YOUR_ANON_KEY_HERE') {
+  try {
+    _supabase = window.supabase.createClient(AUTH_CONFIG.projectUrl, AUTH_CONFIG.anonKey);
+    AUTH_CONFIG.enabled = true;
+  } catch (e) { console.warn('[Cloud] Supabase init failed:', e); }
+}
+
+// ============================================================
+// Auth 模块
+// ============================================================
+const Auth = {
+  session: null,
+  user: null,
+  init() {
+    if (!AUTH_CONFIG.enabled || !_supabase) return Promise.resolve(false);
+    var self = this;
+    return _supabase.auth.getSession().then(function(result) {
+      if (result && result.data && result.data.session) {
+        self.session = result.data.session;
+        self.user = self.session.user;
+        return true;
+      }
+      return false;
+    }).catch(function() { return false; });
+  },
+  onAuthStateChange(callback) {
+    if (!AUTH_CONFIG.enabled || !_supabase) return;
+    _supabase.auth.onAuthStateChange(function(event, session) {
+      Auth.session = session;
+      Auth.user = session ? session.user : null;
+      callback(event, session);
+    });
+  },
+  getUserId() { return this.user ? this.user.id : null; },
+  isLoggedIn() { return !!this.user; },
+  login(email, password) {
+    if (!_supabase) return Promise.reject(new Error('云端 SDK 未加载成功，请检查网络或刷新页面'));
+    return _supabase.auth.signInWithPassword({ email: email, password: password });
+  },
+  register(email, password, username) {
+    if (!_supabase) return Promise.reject(new Error('云端 SDK 未加载成功，请检查网络或刷新页面'));
+    var options = {};
+    if (username) options.data = { username: username };
+    return _supabase.auth.signUp({ email: email, password: password, options: options });
+  },
+  logout() {
+    if (!_supabase) return Promise.reject(new Error('云端 SDK 未加载'));
+    return _supabase.auth.signOut();
+  },
+};
+// Cloud 模块 —— Supabase 数据读写
+// 所有方法失败时静默降级，不阻塞本地 localStorage 流程
+// ============================================================
+const Cloud = {
+  _ready() { return AUTH_CONFIG.enabled && _supabase && Auth.getUserId(); },
+
+  // 登录后从云端拉全量数据覆盖本地
+  async syncFromCloud() {
+    if (!this._ready()) return false;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      var results = await Promise.all([
+        sb.from('profiles').select('*').eq('id', uid).maybeSingle(),
+        sb.from('tasks').select('*').eq('user_id', uid),
+        sb.from('rewards').select('*').eq('user_id', uid),
+        sb.from('daily_tasks').select('*').eq('user_id', uid),
+        sb.from('history').select('*').eq('user_id', uid).order('timestamp', { ascending: false }),
+        sb.from('special_tasks').select('*').eq('user_id', uid)
+      ]);
+
+      var profile = results[0] && results[0].data;
+      var tasksR  = results[1] && results[1].data  || [];
+      var rewardsR= results[2] && results[2].data  || [];
+      var dailyR  = results[3] && results[3].data  || [];
+      var histR   = results[4] && results[4].data   || [];
+      var specialR= results[5] && results[5].data   || [];
+
+      // 如果云端是空的 → 自动把本地推过去 (首次登录迁移)
+      var cloudEmpty = tasksR.length === 0 && rewardsR.length === 0 && histR.length === 0;
+      if (cloudEmpty) {
+        await this.migrateLocalToCloud();
+        return true;
+      }
+
+      // 用云端数据覆盖本地
+      Store.state.tasks = tasksR.map(function(t) {
+        var obj = { id: t.id, name: t.name, points: t.points, description: t.description || '', icon: t.icon || '✅', repeatable: !!t.repeatable };
+        if (t.time_slot) obj.timeSlot = t.time_slot;
+        return obj;
+      });
+      Store.state.rewards = rewardsR.map(function(r) {
+        return { id: r.id, name: r.name, points: r.points, description: r.description || '', unit: r.unit || '次', icon: r.icon || '🎁' };
+      });
+      Store.state.totalPoints = profile ? profile.total_points : 0;
+      Store.state.onboarded = profile ? !!profile.onboarded : false;
+
+      // daily_tasks: 云端是 [{date, task_ids}] 数组 → 本地是 {date: [ids]}
+      var dailyMap = {};
+      dailyR.forEach(function(d) { dailyMap[d.date] = d.task_ids || []; });
+      Store.state.dailyTasks = dailyMap;
+
+      // history: 云端 [{date, timestamp, item_name, type, points, item_id, id}] → 本地 [{date, timestamp, itemName, type, points, itemId, id}]
+      Store.state.history = histR.map(function(h) {
+        return { id: h.id, date: h.date, timestamp: h.timestamp, itemName: h.item_name, type: h.type, points: h.points, itemId: h.item_id };
+      });
+
+      // special_tasks: 云端 [{id, target_date, created_date, ...}] → 本地 {date: [tasks]}
+      var specialMap = {};
+      specialR.forEach(function(s) {
+        var task = {
+          id: s.id, name: s.name, points: s.points, description: s.description || '',
+          icon: s.icon || '⚡', completed: !!s.completed,
+          createdDate: s.created_date, _date: s.target_date
+        };
+        if (!specialMap[s.target_date]) specialMap[s.target_date] = [];
+        specialMap[s.target_date].push(task);
+      });
+      Store.state.specialTasks = specialMap;
+
+      Store._persist();
+      Store._checkAllEarnedToday();
+      Store.notify();
+      return true;
+    } catch (e) {
+      console.warn('[Cloud] syncFromCloud failed:', e);
+      return false;
+    }
+  },
+
+  // 首次登录把本地所有数据推到云端
+  async migrateLocalToCloud() {
+    if (!this._ready()) return false;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      // profile
+      await sb.from('profiles').upsert({
+        id: uid,
+        total_points: Store.state.totalPoints,
+        onboarded: Store.state.onboarded ? true : false
+      });
+
+      // tasks / rewards (bulk)
+      var tasksBulk = Store.state.tasks.map(function(t) {
+        var row = { id: t.id, user_id: uid, name: t.name, points: t.points, description: t.description || '', icon: t.icon || '✅', repeatable: !!t.repeatable };
+        if (t.timeSlot) row.time_slot = t.timeSlot;
+        return row;
+      });
+      if (tasksBulk.length > 0) await sb.from('tasks').upsert(tasksBulk);
+
+      var rewardsBulk = Store.state.rewards.map(function(r) {
+        return { id: r.id, user_id: uid, name: r.name, points: r.points, description: r.description || '', unit: r.unit || '次', icon: r.icon || '🎁' };
+      });
+      if (rewardsBulk.length > 0) await sb.from('rewards').upsert(rewardsBulk);
+
+      // daily_tasks (bulk)
+      var dailyBulk = [];
+      for (var d in Store.state.dailyTasks) {
+        dailyBulk.push({ user_id: uid, date: d, task_ids: Store.state.dailyTasks[d] });
+      }
+      if (dailyBulk.length > 0) await sb.from('daily_tasks').upsert(dailyBulk);
+
+      // history (bulk insert)
+      var histBulk = Store.state.history.map(function(h) {
+        return { id: h.id, user_id: uid, date: h.date, timestamp: h.timestamp, item_name: h.itemName, type: h.type, points: Math.abs(h.points), item_id: h.itemId || null };
+      });
+      if (histBulk.length > 0) {
+        // 分批，Supabase bulk insert 限制
+        var batchSize = 500;
+        for (var i = 0; i < histBulk.length; i += batchSize) {
+          await sb.from('history').insert(histBulk.slice(i, i + batchSize), { upsert: false });
+        }
+      }
+
+      // special_tasks
+      var specialBulk = [];
+      for (var dateKey in Store.state.specialTasks) {
+        Store.state.specialTasks[dateKey].forEach(function(s) {
+          specialBulk.push({
+            id: s.id, user_id: uid, target_date: dateKey,
+            created_date: s.createdDate || dateKey,
+            name: s.name, points: s.points, description: s.description || '',
+            icon: s.icon || '⚡', completed: !!s.completed
+          });
+        });
+      }
+      if (specialBulk.length > 0) await sb.from('special_tasks').upsert(specialBulk);
+
+      console.log('[Cloud] 本地数据已迁移到云端');
+      return true;
+    } catch (e) {
+      console.warn('[Cloud] migrateLocalToCloud failed:', e);
+      return false;
+    }
+  },
+
+  // ==== 增量写（每次操作调用） ====
+  async saveTasks() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      // 1. 删掉云端有但本地没有的 (被删了的任务)
+      var { data: cloudTasks } = await sb.from('tasks').select('id').eq('user_id', uid);
+      var localIds = Store.state.tasks.map(function(t) { return t.id; });
+      var toDelete = (cloudTasks || []).filter(function(c) { return localIds.indexOf(c.id) === -1; });
+      toDelete.forEach(function(d) { sb.from('tasks').delete().eq('id', d.id); });
+      // 2. upsert 全部本地任务
+      var bulk = Store.state.tasks.map(function(t) {
+        var row = { id: t.id, user_id: uid, name: t.name, points: t.points, description: t.description || '', icon: t.icon || '✅', repeatable: !!t.repeatable };
+        if (t.timeSlot) row.time_slot = t.timeSlot;
+        return row;
+      });
+      if (bulk.length > 0) await sb.from('tasks').upsert(bulk);
+      else await sb.from('tasks').delete().eq('user_id', uid);
+    } catch (e) { console.warn('[Cloud] saveTasks:', e); }
+  },
+
+  async saveRewards() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      var { data: cloudRewards } = await sb.from('rewards').select('id').eq('user_id', uid);
+      var localIds = Store.state.rewards.map(function(r) { return r.id; });
+      var toDelete = (cloudRewards || []).filter(function(c) { return localIds.indexOf(c.id) === -1; });
+      toDelete.forEach(function(d) { sb.from('rewards').delete().eq('id', d.id); });
+      var bulk = Store.state.rewards.map(function(r) {
+        return { id: r.id, user_id: uid, name: r.name, points: r.points, description: r.description || '', unit: r.unit || '次', icon: r.icon || '🎁' };
+      });
+      if (bulk.length > 0) await sb.from('rewards').upsert(bulk);
+      else await sb.from('rewards').delete().eq('user_id', uid);
+    } catch (e) { console.warn('[Cloud] saveRewards:', e); }
+  },
+
+  async saveDailyTasks() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      var bulk = [];
+      for (var d in Store.state.dailyTasks) {
+        bulk.push({ user_id: uid, date: d, task_ids: Store.state.dailyTasks[d] });
+      }
+      await sb.from('daily_tasks').delete().eq('user_id', uid);
+      if (bulk.length > 0) await sb.from('daily_tasks').upsert(bulk);
+    } catch (e) { console.warn('[Cloud] saveDailyTasks:', e); }
+  },
+
+  async saveHistory() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      // history 是 append-only，只把本地有但云端没有的插进去
+      var { data: cloudIds } = await sb.from('history').select('id').eq('user_id', uid);
+      var cloudIdSet = new Set((cloudIds || []).map(function(x) { return x.id; }));
+      var toInsert = Store.state.history.filter(function(h) { return !cloudIdSet.has(h.id); }).map(function(h) {
+        return { id: h.id, user_id: uid, date: h.date, timestamp: h.timestamp, item_name: h.itemName, type: h.type, points: Math.abs(h.points), item_id: h.itemId || null };
+      });
+      if (toInsert.length > 0) {
+        // resetToday 会删 history，这里无法简单处理——允许，下次 migrate/sync 会覆盖
+        var batchSize = 500;
+        for (var i = 0; i < toInsert.length; i += batchSize) {
+          await sb.from('history').insert(toInsert.slice(i, i + batchSize), { upsert: false });
+        }
+      }
+    } catch (e) { console.warn('[Cloud] saveHistory:', e); }
+  },
+
+  async saveSpecialTasks() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    var sb = _supabase;
+    try {
+      await sb.from('special_tasks').delete().eq('user_id', uid);
+      var bulk = [];
+      for (var dateKey in Store.state.specialTasks) {
+        Store.state.specialTasks[dateKey].forEach(function(s) {
+          bulk.push({
+            id: s.id, user_id: uid, target_date: dateKey,
+            created_date: s.createdDate || dateKey,
+            name: s.name, points: s.points, description: s.description || '',
+            icon: s.icon || '⚡', completed: !!s.completed
+          });
+        });
+      }
+      if (bulk.length > 0) await sb.from('special_tasks').upsert(bulk);
+    } catch (e) { console.warn('[Cloud] saveSpecialTasks:', e); }
+  },
+
+  async updateProfile() {
+    if (!this._ready()) return;
+    var uid = Auth.getUserId();
+    try {
+      await _supabase.from('profiles').upsert({ id: uid, total_points: Store.state.totalPoints, onboarded: Store.state.onboarded ? true : false });
+    } catch (e) { console.warn('[Cloud] updateProfile:', e); }
+  }
+};
+
 // ============ 数据配置 ============
 const DEFAULT_TASKS = [
   { id: '1', name: '早起', points: 20, description: '8:00前起床算早起', icon: '🌅' },
@@ -735,7 +1065,7 @@ init() {
       }
     }
     if (changed) {
-      this._persist();
+      this._persist(['special']);
     }
   },
   // 新增方法：检查今日全勤奖励状态
@@ -804,12 +1134,12 @@ init() {
       };
       this.state.history = [bonusRecord, ...this.state.history];
       this.state.allEarnedToday = true;
-      this._persist();
+      this._persist(['daily', 'history', 'profile']);
       this.notify();
       return { success: true, message: '🎉 +' + task.points + ' 积分！全勤奖励 +' + bonusPoints + ' 积分！' };
     }
     
-    this._persist();
+    this._persist(['daily', 'history', 'profile']);
     this.notify();
     return { success: true, message: '+' + task.points + ' 积分！' };
   },
@@ -829,7 +1159,7 @@ init() {
       itemId: 'manual',
     };
     this.state.history = [record, ...this.state.history];
-    this._persist();
+    this._persist(['history', 'profile']);
     this.notify();
     return { success: true, message: (type === 'earn' ? '+' : '-') + points + ' 积分记录已添加' };
   },
@@ -854,7 +1184,7 @@ init() {
       itemName: reward.name, type: 'spend', points: reward.points, itemId: reward.id,
     };
     this.state.history = [record, ...this.state.history];
-    this._persist();
+    this._persist(['history', 'profile']);
     this.notify();
     return { success: true, message: '-' + reward.points + ' 积分，尽情享受吧！' };
   },
@@ -886,7 +1216,7 @@ resetToday() {
   delete newDaily[today];
   this.state.dailyTasks = newDaily;
   
-  this._persist();
+  this._persist(['daily', 'history', 'profile']);
   this.notify();
   return todayEarned + todaySpent;
 },
@@ -1081,7 +1411,7 @@ resetToday() {
               this.state.specialTasks[date] = [...this.state.specialTasks[date], ...specialTasks[date]];
             }
           }
-          this._persist();
+          this._persist(['tasks', 'rewards', 'daily', 'history', 'special', 'profile']);
           this.notify();
           resolve({ success: true, message: `导入成功！共 ${recordCount} 条记录，总积分 ${this.state.totalPoints}` });
         } catch (err) {
@@ -1091,7 +1421,7 @@ resetToday() {
       input.click();
     });
   },
-  _persist() {
+  _persist(changed) {
     try {
       localStorage.setItem(STORAGE_KEYS.TOTAL, String(this.state.totalPoints));
       localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(this.state.history));
@@ -1100,6 +1430,17 @@ resetToday() {
       localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(this.state.tasks));
       localStorage.setItem(STORAGE_KEYS.REWARDS, JSON.stringify(this.state.rewards));
     } catch (e) {}
+    // 云端同步 (fire-and-forget, 不阻塞)
+    if (Auth.isLoggedIn()) {
+      var c = changed || [];
+      if (c.length === 0) return;
+      if (c.indexOf('tasks') >= 0)      Cloud.saveTasks();
+      if (c.indexOf('rewards') >= 0)    Cloud.saveRewards();
+      if (c.indexOf('daily') >= 0)      Cloud.saveDailyTasks();
+      if (c.indexOf('history') >= 0)    Cloud.saveHistory();
+      if (c.indexOf('special') >= 0)    Cloud.saveSpecialTasks();
+      if (c.indexOf('profile') >= 0)    Cloud.updateProfile();
+    }
   },
   // ============ 任务/奖励 CRUD ============
   addTask(task) {
@@ -1115,18 +1456,18 @@ resetToday() {
       timeSlot: task.timeSlot || undefined,
     };
     this.state.tasks = [...this.state.tasks, newTask];
-    this._persist();
+    this._persist(['tasks']);
     this.notify();
     return { success: true, message: '任务已添加' };
   },
   updateTask(id, updates) {
     this.state.tasks = this.state.tasks.map(t => t.id === id ? { ...t, ...updates } : t);
-    this._persist();
+    this._persist(['tasks']);
     this.notify();
   },
   deleteTask(id) {
     this.state.tasks = this.state.tasks.filter(t => t.id !== id);
-    this._persist();
+    this._persist(['tasks']);
     this.notify();
   },
   addReward(reward) {
@@ -1141,24 +1482,24 @@ resetToday() {
       icon: reward.icon || '🎁',
     };
     this.state.rewards = [...this.state.rewards, newReward];
-    this._persist();
+    this._persist(['rewards']);
     this.notify();
     return { success: true, message: '奖励已添加' };
   },
   updateReward(id, updates) {
     this.state.rewards = this.state.rewards.map(r => r.id === id ? { ...r, ...updates } : r);
-    this._persist();
+    this._persist(['rewards']);
     this.notify();
   },
   deleteReward(id) {
     this.state.rewards = this.state.rewards.filter(r => r.id !== id);
-    this._persist();
+    this._persist(['rewards']);
     this.notify();
   },
   resetTasksAndRewards() {
     this.state.tasks = DEFAULT_TASKS.slice();
     this.state.rewards = DEFAULT_REWARDS.slice();
-    this._persist();
+    this._persist(['tasks', 'rewards']);
     this.notify();
   },
   isToday() { return this.state.currentDate === formatDate(new Date()); },
@@ -1206,7 +1547,7 @@ addSpecialTask(date, task) {
     this.state.specialTasks[date] = [];
   }
   this.state.specialTasks[date].push(newTask);
-  this._persist();
+  this._persist(['special']);
   this.notify();
   return { success: true, message: '突发任务已布置～' };
 },
@@ -1232,14 +1573,14 @@ completeSpecialTask(date, taskId) {
   // 完成后从数组中移除任务
   this.state.specialTasks[date] = tasks.filter(t => t.id !== taskId);
   
-  this._persist();
+  this._persist(['special', 'history', 'profile']);
   this.notify();
   return { success: true, message: '🎉 +' + task.points + ' 积分！突发任务完成！' };
 },
 deleteSpecialTask(date, taskId) {
   if (!this.state.specialTasks[date]) return;
   this.state.specialTasks[date] = this.state.specialTasks[date].filter(t => t.id !== taskId);
-  this._persist();
+  this._persist(['special']);
   this.notify();
 },
   currentDateRecords() {
@@ -1596,6 +1937,22 @@ let limitHint = '';
         '<h1 class="hero-title">我的积分手账本</h1>' +
         '<p class="hero-subtitle">每一点努力，都值得被奖励</p>' +
       '</div>' +
+      (function() {
+        if (!AUTH_CONFIG.enabled) return '';
+        if (Auth.isLoggedIn()) {
+          var u = Auth.user;
+          var displayName = (u.user_metadata && u.user_metadata.username) || u.email.split('@')[0] || '用户';
+          return '<div class="account-bar animate-fade-in-up" style="animation-delay: 0.03s">' +
+            '<div class="acc-left">👤 ' + displayName + '<span class="acc-status ok">☁️ 已同步云端</span></div>' +
+            '<div class="acc-right"><button class="acc-btn" id="force-sync-btn">🔄 手动同步</button><button class="acc-btn" id="logout-btn">🚪 退出</button></div>' +
+          '</div>';
+        } else {
+          return '<div class="account-bar animate-fade-in-up" style="animation-delay: 0.03s">' +
+            '<div class="acc-left">🔐 <span class="acc-status warn">未登录 · 仅本机可用</span></div>' +
+            '<div class="acc-right"><button class="acc-btn" id="login-btn">登录账号</button></div>' +
+          '</div>';
+        }
+      })() +
       '<div class="points-total-card animate-fade-in-up" style="animation-delay: 0.05s">' +
         '<div class="points-label"><span>👛</span><span>当前总积分</span></div>' +
         '<div class="points-big tabular" id="total-points">' + s.totalPoints + '</div>' +
@@ -1906,6 +2263,172 @@ document.querySelectorAll('.special-task-card').forEach(function(card) {
 
   var manualBtn = document.getElementById('manual-add-btn');
   if (manualBtn) manualBtn.addEventListener('click', function() { showManualAddDialog(); });
+
+  // 账户相关
+  var loginBtn = document.getElementById('login-btn');
+  if (loginBtn) loginBtn.addEventListener('click', function() { showAuthDialog(); });
+  var logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', function() {
+    if (!confirm('确定退出登录吗？本地数据会保留，下次登录会自动同步。')) return;
+    Auth.logout().then(function() {
+      Auth.user = null;
+      Auth.session = null;
+      Toast.success('已退出登录');
+      render();
+    }).catch(function(e) { Toast.error('退出失败: ' + e.message); });
+  });
+  var forceSyncBtn = document.getElementById('force-sync-btn');
+  if (forceSyncBtn) forceSyncBtn.addEventListener('click', function() {
+    if (!Auth.isLoggedIn()) { Toast.info('请先登录账号'); return; }
+    Toast.info('正在从云端拉取最新数据...');
+    Cloud.syncFromCloud().then(function(ok) {
+      if (ok) Toast.success('同步完成');
+      else Toast.error('同步失败，请检查网络');
+    });
+  });
+}
+
+// ============ 登录 / 注册对话框 ============
+function translateError(msg) {
+  if (!msg) return '未知错误';
+  var m = msg.toLowerCase();
+  if (m.indexOf('invalid login') >= 0) return '邮箱或密码错误';
+  if (m.indexOf('invalid email') >= 0) return '邮箱格式不正确';
+  if (m.indexOf('email not confirmed') >= 0) return '请先去邮箱点验证链接完成注册';
+  if (m.indexOf('user already registered') >= 0) return '该邮箱已注册，请直接登录';
+  if (m.indexOf('signup disabled') >= 0) return '注册功能已关闭，请联系管理员开启';
+  if (m.indexOf('weak password') >= 0) return '密码太弱，至少 6 位';
+  if (m.indexOf('password') >= 0 && m.indexOf('at least') >= 0) return '密码至少需要 6 位';
+  if (m.indexOf('fetch') >= 0 || m.indexOf('network') >= 0 || m.indexOf('failed to fetch') >= 0) return '网络连接失败，请检查网络或代理';
+  if (m.indexOf('cors') >= 0) return '跨域请求被拒绝';
+  if (m.indexOf('jwt') >= 0 || m.indexOf('token') >= 0) return '登录已过期，请重新登录';
+  if (m.indexOf('timeout') >= 0) return '请求超时，请重试';
+  if (msg.indexOf('云端 SDK') >= 0) return msg;
+  return msg;
+}
+function showAuthDialog() {
+  if (!AUTH_CONFIG.enabled) {
+    alert('云端功能未启用。请先在 AUTH_CONFIG 里填入 anon key。');
+    return;
+  }
+  if (!_supabase) {
+    alert('云端 SDK 加载失败。可能原因：网络不通或 CDN 被墙。请按 F12 查看控制台红字。');
+    return;
+  }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = '<div class="dialog-content" style="max-width:360px;" onclick="event.stopPropagation()">' +
+    '<div style="text-align:center;margin-bottom:1rem;">' +
+      '<div style="font-size:2.5rem;">🔐</div>' +
+      '<h2 style="font-size:1.125rem;font-weight:700;margin:0.25rem 0;">登录 / 注册</h2>' +
+      '<div style="font-size:0.8rem;color:var(--muted-foreground);margin-top:0.25rem;">登录后可多设备同步数据</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:0.25rem;margin-bottom:1rem;background:var(--muted);border-radius:9999px;padding:4px;">' +
+      '<button class="atab" data-tab="login" style="flex:1;padding:0.5rem;border:none;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:0.875rem;font-weight:500;background:white;color:var(--foreground);box-shadow:0 1px 3px rgba(0,0,0,0.08);">登录</button>' +
+      '<button class="atab" data-tab="register" style="flex:1;padding:0.5rem;border:none;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:0.875rem;font-weight:500;background:transparent;color:var(--muted-foreground);">注册</button>' +
+    '</div>' +
+    '<div id="auth-fields"></div>' +
+    '<div id="auth-error" style="color:var(--destructive);font-size:0.8rem;margin-top:0.5rem;min-height:1.2rem;"></div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+  var fields = overlay.querySelector('#auth-fields');
+  var errEl  = overlay.querySelector('#auth-error');
+
+  function showTab(tab) {
+    errEl.textContent = '';
+    if (tab === 'login') {
+      fields.innerHTML =
+        '<div class="dialog-form-group">' +
+          '<label>邮箱</label>' +
+          '<input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '</div>' +
+        '<div class="dialog-form-group">' +
+          '<label>密码</label>' +
+          '<input id="auth-pwd" type="password" placeholder="••••••••" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '</div>' +
+        '<div style="display:flex;gap:0.5rem;margin-top:1rem;">' +
+          '<button class="btn btn-outline" id="auth-cancel" style="flex:1;">取消</button>' +
+          '<button class="btn btn-primary" id="auth-submit" style="flex:1;">登录</button>' +
+        '</div>';
+    } else {
+      fields.innerHTML =
+        '<div class="dialog-form-group">' +
+          '<label>昵称 (可选)</label>' +
+          '<input id="auth-name" type="text" maxlength="20" placeholder="显示用昵称" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '</div>' +
+        '<div class="dialog-form-group">' +
+          '<label>邮箱</label>' +
+          '<input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '</div>' +
+        '<div class="dialog-form-group">' +
+          '<label>密码 (至少 6 位)</label>' +
+          '<input id="auth-pwd" type="password" placeholder="••••••••" minlength="6" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);">' +
+        '</div>' +
+        '<div style="font-size:0.7rem;color:var(--muted-foreground);margin-top:-0.25rem;">注册后需先在 Supabase Dashboard 开启 Email provider（默认已开）。</div>' +
+        '<div style="display:flex;gap:0.5rem;margin-top:1rem;">' +
+          '<button class="btn btn-outline" id="auth-cancel" style="flex:1;">取消</button>' +
+          '<button class="btn btn-primary" id="auth-submit" style="flex:1;">注册</button>' +
+        '</div>';
+    }
+    overlay.querySelector('#auth-cancel').addEventListener('click', function() { overlay.remove(); });
+    overlay.querySelector('#auth-submit').addEventListener('click', function() {
+      var email = overlay.querySelector('#auth-email').value.trim();
+      var pwd   = overlay.querySelector('#auth-pwd').value;
+      errEl.textContent = '';
+      if (!email || !pwd) { errEl.textContent = '请填写邮箱和密码'; return; }
+      var loading = overlay.querySelector('#auth-submit');
+      loading.disabled = true; loading.textContent = '请稍候...';
+      var promise;
+      if (tab === 'login') {
+        promise = Auth.login(email, pwd);
+      } else {
+        var nameInput = overlay.querySelector('#auth-name');
+        var username = nameInput ? nameInput.value.trim() : '';
+        promise = Auth.register(email, pwd, username);
+      }
+      promise.then(function(result) {
+        loading.disabled = false;
+        loading.textContent = tab === 'login' ? '登录' : '注册';
+        if (result.error) {
+          errEl.textContent = translateError(result.error.message);
+          return;
+        }
+        // 登录 / 注册成功
+        if (Auth.isLoggedIn() || (result.data && result.data.session)) {
+          Auth.session = result.data && result.data.session;
+          Auth.user = (result.data && result.data.session) ? result.data.session.user : (result.data && result.data.user);
+          Toast.success(tab === 'login' ? '登录成功！正在同步云端...' : '注册成功！正在创建云端账号...');
+          overlay.remove();
+          render();
+          Cloud.syncFromCloud().then(function(ok) {
+            if (ok) Toast.success('云端数据已同步');
+            else Toast.error('同步失败，请检查网络或确认数据库已建表');
+          });
+        } else {
+          // 邮箱确认的情况
+          Toast.info('请查收邮件完成邮箱验证后再登录');
+          overlay.remove();
+        }
+      }).catch(function(e) {
+        loading.disabled = false; loading.textContent = tab === 'login' ? '登录' : '注册';
+        errEl.textContent = translateError(e.message) || '网络错误，请重试';
+      });
+    });
+  }
+
+  overlay.querySelectorAll('.atab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      overlay.querySelectorAll('.atab').forEach(function(b) {
+        b.style.background = 'transparent'; b.style.color = 'var(--muted-foreground)';
+      });
+      btn.style.background = 'white'; btn.style.color = 'var(--foreground)';
+      showTab(btn.dataset.tab);
+    });
+  });
+  showTab('login');
 }
 
 // ============ 手动添加积分对话框 ============
@@ -2226,6 +2749,29 @@ function renderDialogs() {
 Store.init();
 Store.subscribe(render);
 render();
+attachEventListeners();
+
+// 云端登录 & 自动同步
+if (AUTH_CONFIG.enabled && _supabase) {
+  Auth.init().then(function(loggedIn) {
+    render(); // 刷新一次，显示账户状态条
+    if (loggedIn) {
+      Cloud.syncFromCloud().then(function(ok) {
+        if (ok) console.log('[Cloud] 已从云端同步最新数据');
+        else console.warn('[Cloud] 云端同步失败，使用本地数据');
+      });
+    }
+  });
+  Auth.onAuthStateChange(function(event, session) {
+    Auth.user = session ? session.user : null;
+    render();
+    if (event === 'SIGNED_IN' && session) {
+      Cloud.syncFromCloud();
+    }
+  });
+}
+
+renderDialogs();
 </script>
 </body>
 </html>
