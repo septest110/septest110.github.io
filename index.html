@@ -476,7 +476,7 @@ body {
   <div class="header">
     <h1>课表</h1>
     <input type="text" class="editable-title" id="editableInfo" value="2026-2027学年第一学期" style="font-size:12px;min-width:150px;" title="点击修改学年信息">
-    <a class="nav-btn" href="../IntegralSystem.html" target="_blank">📒 积分手账本</a>
+    <a class="nav-btn" href="IntegralSystem.html">📒 积分手账本</a>
   </div>
   <div class="controls">
     <button class="btn btn-secondary" onclick="changeDay(-1)" title="前一天">◀ 前一天</button>
@@ -542,8 +542,10 @@ const periods = [
 
 // 判断教室是否属于ABC楼区域
 function isABCArea(room) {
-  // ABC楼区域：房间号以A、B、C开头
-  return /^[ABC]/.test(room);
+  // K3属于其他区域，K楼其余属于ABC区域
+  if (/^K3/.test(room)) return false;
+  // ABC楼区域：房间号以A、B、C或K开头（K3已排除）
+  return /^[ABCK]/.test(room);
 }
 
 // 获取指定区域的时间段
@@ -559,26 +561,29 @@ function getPeriodTime(period, room) {
 // dayOfWeek: 0=周日, 1=周一, 2=周二, 3=周三, 4=周四, 5=周五, 6=周六
 const courses = [
   // 周一
-  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408教室' },
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212教室' },
-  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 1, period: 3, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'M203教室' },
-  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403教室' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 1, period: 3, weeks: [8], room: 'K2-216' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 1, period: 5, weeks: [8], room: 'A411(公共机房6)' },
   // 周二
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,3,4], room: 'A210（公共机房3）' },
-  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211（计算机实训室）' },
-  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111（公共机房2）' },
-  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211(计算机实训室)' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,4], room: 'A210(公共机房3)' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [17], room: 'A313(达内共建实训基地)' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111(公共机房2)' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
   { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 4, weeks: [1,2,3,4], room: 'K2-404' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 2, period: 6, weeks: [8,9,10,11,12,13,14,15], room: 'A207(网络综合实训室)' },
   // 周三
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509（公共机房5）' },
-  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211（计算机实训室）' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509(公共机房5)' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211(计算机实训室)' },
   // 周四
-  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
-  { name: '计算机网络', type: '实验学时', typeClass: 'lab', day: 4, period: 2, weeks: [8,9,10,11,12,13,14,15], room: 'A207（网络综合实训室）' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 4, period: 3, weeks: [4,6,7,8,9,10,11,12,13,14,15,16], room: 'M203' },
   { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [1,2,3,4,6,7,8,9], room: 'K2-514' },
-  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12,13], room: 'A411（公共机房6）' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12], room: 'A411(公共机房6)' },
   // 周五
-  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12,13], room: 'K2-314' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12], room: 'K2-314' },
   // 周六
   { name: '编译原理', type: '必修', typeClass: 'required', day: 6, period: 1, weeks: [6], room: 'K2-506' },
   // 周日
@@ -1005,22 +1010,25 @@ function parseDateValue(val) {
 
 // 默认课表数据（用于恢复）
 const defaultCourses = [
-  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408教室' },
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212教室' },
-  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 1, period: 3, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'M203教室' },
-  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403教室' },
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,3,4], room: 'A210（公共机房3）' },
-  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211（计算机实训室）' },
-  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111（公共机房2）' },
-  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 1, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'K3-408' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 1, period: 2, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17], room: 'K3-212' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 1, period: 3, weeks: [8], room: 'K2-216' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 1, period: 4, weeks: [1,2,3,4,5,7,8,9,10,11,12,13], room: 'C403' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 1, period: 5, weeks: [8], room: 'A411(公共机房6)' },
+  { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [5,7,8,9,10,11,12,13], room: 'A211(计算机实训室)' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [1,2,4], room: 'A210(公共机房3)' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 2, period: 1, weeks: [17], room: 'A313(达内共建实训基地)' },
+  { name: '人工智能应用与实践', type: '必修', typeClass: 'required', day: 2, period: 2, weeks: [5,7,8,9,10,11,12,13], room: 'A111(公共机房2)' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 2, period: 3, weeks: [1,2,3,4,5,7,8,9,10,11,12,13,14,15], room: 'K2-406' },
   { name: '算法设计与分析', type: '限选', typeClass: 'elective', day: 2, period: 4, weeks: [1,2,3,4], room: 'K2-404' },
-  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509（公共机房5）' },
-  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211（计算机实训室）' },
-  { name: '计算机网络', type: '讲课学时', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
-  { name: '计算机网络', type: '实验学时', typeClass: 'lab', day: 4, period: 2, weeks: [8,9,10,11,12,13,14,15], room: 'A207（网络综合实训室）' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 2, period: 6, weeks: [8,9,10,11,12,13,14,15], room: 'A207(网络综合实训室)' },
+  { name: 'Web企业级开发', type: '限选', typeClass: 'elective', day: 3, period: 1, weeks: [5,7,8,9,10,11,12,13,14,15,16,17], room: 'A509(公共机房5)' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 3, period: 2, weeks: [4,5,7,8,9,10,11,12,13,14,15,16], room: 'A211(计算机实训室)' },
+  { name: '计算机网络', type: '必修', typeClass: 'required', day: 4, period: 1, weeks: [1,2,3,4,6,7], room: 'K2-406' },
+  { name: 'Python程序设计', type: '限选', typeClass: 'elective', day: 4, period: 3, weeks: [4,6,7,8,9,10,11,12,13,14,15,16], room: 'M203' },
   { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [1,2,3,4,6,7,8,9], room: 'K2-514' },
-  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12,13], room: 'A411（公共机房6）' },
-  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12,13], room: 'K2-314' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 4, period: 4, weeks: [10,11,12], room: 'A411(公共机房6)' },
+  { name: '编译原理', type: '必修', typeClass: 'required', day: 5, period: 1, weeks: [2,3,6,7,8,9,10,11,12], room: 'K2-314' },
   { name: '编译原理', type: '必修', typeClass: 'required', day: 6, period: 1, weeks: [6], room: 'K2-506' },
   { name: '编译原理', type: '必修', typeClass: 'required', day: 0, period: 1, weeks: [3], room: 'K2-404' }
 ];

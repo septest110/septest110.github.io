@@ -85,6 +85,31 @@
     background: linear-gradient(135deg, var(--primary/20), hsl(120 25% 55% / 0.05), var(--secondary));
     border-radius: 1rem; padding: 2.5rem 1.5rem; text-align: center;
     margin-bottom: 1.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+    position: relative;
+  }
+  .hero-banner .nav-btn {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    background: rgba(255,255,255,0.7);
+    color: var(--foreground);
+    border: 1px solid hsl(30 15% 88% / 0.8);
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+  }
+  .hero-banner .nav-btn:hover {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
   }
   .hero-emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .hero-title { font-size: 1.25rem; font-weight: 700; }
@@ -579,7 +604,7 @@ const TASKS = [
   { id: '5b', name: '睡前洗漱', points: 5, description: '晚上洗漱', icon: '🪥', timeSlot: 'evening' },
   { id: '6a', name: '护肤(早)', points: 5, description: '早上护理', icon: '🧴', timeSlot: 'morning' },
   { id: '6b', name: '护肤(晚)', points: 5, description: '晚上护理', icon: '🧴', timeSlot: 'evening' },
-  { id: '7', name: '喝秋梨膏', points: 5, description: '一杯', icon: '🍐' },
+  { id: '7', name: '喝水', points: 5, description: '一杯', icon: '🍐' },
   { id: '8', name: '拉橡皮筋', points: 5, description: '每拉一次加分，可多次', icon: '🏃', repeatable: true },
   { id: '9', name: '赚取微软积分', points: 10, description: '完成微软积分任务', icon: '🎯' },
   { id: '10a', name: '吃药抹药(早)', points: 5, description: '早上吃药抹药', icon: '💊', timeSlot: 'morning' },
@@ -1124,54 +1149,6 @@ deleteSpecialTask(date, taskId) {
   this._persist();
   this.notify();
 },
-deleteTask(taskId) {
-  const idx = TASKS.findIndex(t => t.id === taskId);
-  if (idx === -1) return;
-  TASKS.splice(idx, 1);
-  saveTasks();
-  this.notify();
-},
-updateTask(taskId, updates) {
-  const task = TASKS.find(t => t.id === taskId);
-  if (!task) return;
-  Object.assign(task, updates);
-  saveTasks();
-  this.notify();
-},
-addTask(task) {
-  const newTask = Object.assign({
-    id: 't-' + Date.now(),
-    name: '新任务', points: 10, description: '', icon: '✅'
-  }, task);
-  TASKS.push(newTask);
-  saveTasks();
-  this.notify();
-  return newTask;
-},
-deleteReward(rewardId) {
-  const idx = REWARDS.findIndex(r => r.id === rewardId);
-  if (idx === -1) return;
-  REWARDS.splice(idx, 1);
-  saveRewards();
-  this.notify();
-},
-updateReward(rewardId, updates) {
-  const reward = REWARDS.find(r => r.id === rewardId);
-  if (!reward) return;
-  Object.assign(reward, updates);
-  saveRewards();
-  this.notify();
-},
-addReward(reward) {
-  const newReward = Object.assign({
-    id: 'r-' + Date.now(),
-    name: '新奖励', points: 10, description: '', unit: '次', icon: '🎁'
-  }, reward);
-  REWARDS.push(newReward);
-  saveRewards();
-  this.notify();
-  return newReward;
-},
   currentDateRecords() {
     return this.state.history
       .filter(r => r.date === this.state.currentDate)
@@ -1404,10 +1381,6 @@ if (isRepeatable) {
 }
 
 return '<button class="' + classes + '" data-task-id="' + task.id + '" ' + (disabled ? 'disabled' : '') + '>' +
-  '<div class="manage-btns">' +
-    '<button class="manage-btn edit" data-edit-task="' + task.id + '" title="编辑">✏️</button>' +
-    '<button class="manage-btn delete" data-delete-task="' + task.id + '" title="删除">🗑️</button>' +
-  '</div>' +
   '<div class="task-icon">' + task.icon + '</div>' +
   '<div style="width:100%">' +
     '<div class="task-name-row">' +
@@ -1436,10 +1409,6 @@ const specialTasksForDate = s.currentDate === formatDate(new Date()) ? allSpecia
         const checkHTML = task.completed ? '<div class="task-check" title="已完成">✓</div>' : '';
         const createdInfo = task.createdDate === formatDate(new Date()) ? '' : '<div style="font-size: 0.65rem; color: var(--muted-foreground); margin-top: 2px;">📅 ' + task.createdDate + ' 布置</div>';
         return '<button class="' + classes + '" data-special-id="' + task.id + '" data-special-date="' + task._date + '">' +
-          '<div class="manage-btns">' +
-            '<button class="manage-btn edit" data-edit-special="' + task.id + '" data-special-date="' + task._date + '" title="编辑">✏️</button>' +
-            '<button class="manage-btn delete" data-delete-special="' + task.id + '" data-special-date="' + task._date + '" title="删除">🗑️</button>' +
-          '</div>' +
           '<div class="task-icon">' + task.icon + '</div>' +
           '<div style="width:100%">' +
             '<div class="task-name-row">' +
@@ -1470,10 +1439,6 @@ const countHTML = redeemCount > 0
 let limitHint = '';
     
     return '<button class="reward-card" data-reward-id="' + reward.id + '" ' + (disabled ? 'disabled' : '') + '>' +
-      '<div class="manage-btns">' +
-        '<button class="manage-btn edit" data-edit-reward="' + reward.id + '" title="编辑">✏️</button>' +
-        '<button class="manage-btn delete" data-delete-reward="' + reward.id + '" title="删除">🗑️</button>' +
-      '</div>' +
       '<div class="reward-icon">' + reward.icon + '</div>' +
       '<div style="width:100%">' +
         '<div class="reward-name">' + reward.name + '</div>' +
@@ -1525,6 +1490,7 @@ let limitHint = '';
   const html = '<main>' +
     '<div class="container section">' +
       '<div class="hero-banner animate-fade-in-up">' +
+        '<a class="nav-btn" href="index.html">📅 课表</a>' +
         '<div class="hero-emoji">📒</div>' +
         '<h1 class="hero-title">我的积分手账本</h1>' +
         '<p class="hero-subtitle">每一点努力，都值得被奖励</p>' +
@@ -1577,7 +1543,6 @@ let limitHint = '';
     '<h2>📝 今日任务</h2>' +
     '<span class="count">已完成 ' + completedToday.filter(function(id) { var t = TASKS.find(function(x) { return x.id === id; }); return t && !t.repeatable; }).length + ' / ' + fixedTaskCount + '</span>' +
     (Store.state.allEarnedToday ? '<span style="margin-left:10px;background:linear-gradient(135deg,#f59e0b,#ec4899);color:white;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;">✨ 全勤达成！+50积分</span>' : '') +
-    '<button class="btn btn-outline btn-sm" id="add-task-btn" style="margin-left:auto;font-size:0.8rem;">+ 新建任务</button>' +
   '</div>' +
   '<div class="task-grid" id="task-grid">' + tasksHTML + '</div>' +
 '</div>' +
@@ -1599,7 +1564,6 @@ let limitHint = '';
   '<div class="section-title">' +
     '<h2>🎁 奖励兑换</h2>' +
     '<span class="count">当前余额 ' + s.totalPoints + ' 分</span>' +
-    '<button class="btn btn-outline btn-sm" id="add-reward-btn" style="margin-left:auto;font-size:0.8rem;">+ 新建奖励</button>' +
   '</div>' +
   '<div class="reward-grid" id="reward-grid">' + rewardsHTML + '</div>' +
 '</div>' +
@@ -1696,7 +1660,6 @@ function attachEventListeners() {
   if (taskGrid) {
     taskGrid.querySelectorAll('.task-card').forEach(function(card) {
       card.addEventListener('click', function(e) {
-        if (e.target.closest('.manage-btn')) return;
         var taskId = card.dataset.taskId;
         var task = TASKS.find(function(t) { return t.id === taskId; });
         if (!task) return;
@@ -1727,8 +1690,8 @@ function attachEventListeners() {
 
   // 突发任务卡片点击
 document.querySelectorAll('.special-task-card').forEach(function(card) {
-    card.addEventListener('click', function(e) {
-      if (e.target.closest('.manage-btn')) return;
+    card.addEventListener('click', function() {
+      // 已完成的任务不响应点击
       if (card.classList.contains('completed')) {
         Toast.success('任务已完成');
         return;
@@ -1756,8 +1719,7 @@ document.querySelectorAll('.special-task-card').forEach(function(card) {
   var rewardGrid = document.getElementById('reward-grid');
   if (rewardGrid) {
     rewardGrid.querySelectorAll('.reward-card').forEach(function(card) {
-      card.addEventListener('click', function(e) {
-        if (e.target.closest('.manage-btn')) return;
+      card.addEventListener('click', function() {
         var rewardId = card.dataset.rewardId;
         var reward = REWARDS.find(function(r) { return r.id === rewardId; });
         if (!reward) return;
@@ -1804,27 +1766,6 @@ document.querySelectorAll('.special-task-card').forEach(function(card) {
 
   var manualBtn = document.getElementById('manual-add-btn');
   if (manualBtn) manualBtn.addEventListener('click', function() { showManualAddDialog(); });
-
-  document.addEventListener('click', function(e) {
-    var editBtn = e.target.closest('[data-edit-task]');
-    if (editBtn) { e.stopPropagation(); e.preventDefault(); showEditTaskDialog(editBtn.dataset.editTask); return; }
-    var deleteBtn = e.target.closest('[data-delete-task]');
-    if (deleteBtn) { e.stopPropagation(); e.preventDefault(); showDeleteTaskConfirm(deleteBtn.dataset.deleteTask); return; }
-    var editSpecial = e.target.closest('[data-edit-special]');
-    if (editSpecial) { e.stopPropagation(); e.preventDefault(); showEditSpecialDialog(editSpecial.dataset.editSpecial, editSpecial.dataset.specialDate); return; }
-    var deleteSpecial = e.target.closest('[data-delete-special]');
-    if (deleteSpecial) { e.stopPropagation(); e.preventDefault(); showDeleteSpecialConfirm(deleteSpecial.dataset.deleteSpecial, deleteSpecial.dataset.specialDate); return; }
-    var editReward = e.target.closest('[data-edit-reward]');
-    if (editReward) { e.stopPropagation(); e.preventDefault(); showEditRewardDialog(editReward.dataset.editReward); return; }
-    var deleteReward = e.target.closest('[data-delete-reward]');
-    if (deleteReward) { e.stopPropagation(); e.preventDefault(); showDeleteRewardConfirm(deleteReward.dataset.deleteReward); return; }
-  });
-
-  var addTaskBtn = document.getElementById('add-task-btn');
-  if (addTaskBtn) addTaskBtn.addEventListener('click', function(e) { e.stopPropagation(); showAddTaskDialog(); });
-
-  var addRewardBtn = document.getElementById('add-reward-btn');
-  if (addRewardBtn) addRewardBtn.addEventListener('click', function(e) { e.stopPropagation(); showAddRewardDialog(); });
 }
 
 // ============ 手动添加积分对话框 ============
@@ -1986,344 +1927,6 @@ function showResetDialog() {
     overlay.remove();
     if (refunded > 0) Toast.success('已重置今日打卡，回退 ' + refunded + ' 积分');
     else Toast.info('今日还没有打卡记录哦～');
-  });
-}
-
-// ============ 编辑/删除任务对话框 ============
-function showEditTaskDialog(taskId) {
-  const task = TASKS.find(t => t.id === taskId);
-  if (!task) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">✏️</div>' +
-      '<div class="dialog-title">编辑任务</div>' +
-    '</div>' +
-    '<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">任务名称</label>' +
-        '<input type="text" id="edit-task-name" value="' + task.name.replace(/"/g, '&quot;') + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">积分</label>' +
-        '<input type="number" id="edit-task-points" min="1" value="' + task.points + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">描述</label>' +
-        '<input type="text" id="edit-task-desc" value="' + (task.description || '').replace(/"/g, '&quot;') + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="edit-task-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="edit-task-confirm">保存</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-task-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-task-confirm').addEventListener('click', function() {
-    const name = overlay.querySelector('#edit-task-name').value.trim();
-    const points = parseInt(overlay.querySelector('#edit-task-points').value, 10);
-    const desc = overlay.querySelector('#edit-task-desc').value.trim();
-    if (!name) { Toast.error('请输入任务名称'); return; }
-    if (!points || points < 1) { Toast.error('请输入有效积分'); return; }
-    Store.updateTask(taskId, { name: name, points: points, description: desc });
-    overlay.remove();
-    Toast.success('任务已更新');
-  });
-}
-
-function showDeleteTaskConfirm(taskId) {
-  const task = TASKS.find(t => t.id === taskId);
-  if (!task) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">🗑️</div>' +
-      '<div class="dialog-title">删除任务</div>' +
-      '<div class="dialog-desc">确定要删除任务「' + task.name + '」吗？此操作无法撤销。</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="del-task-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="del-task-confirm" style="background:var(--destructive);">删除</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-task-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-task-confirm').addEventListener('click', function() {
-    Store.deleteTask(taskId);
-    overlay.remove();
-    Toast.success('任务已删除');
-  });
-}
-
-function showAddTaskDialog() {
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">➕</div>' +
-      '<div class="dialog-title">新建任务</div>' +
-    '</div>' +
-    '<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">任务名称</label>' +
-        '<input type="text" id="add-task-name" placeholder="例如：跑步30分钟" maxlength="30" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">积分</label>' +
-        '<input type="number" id="add-task-points" min="1" max="999" value="10" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">描述</label>' +
-        '<input type="text" id="add-task-desc" placeholder="可选，任务说明" maxlength="50" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">图标</label>' +
-        '<div style="display:flex;gap:0.375rem;flex-wrap:wrap;">' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="✅">✅</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🏃">🏃</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="📚">📚</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🧘">🧘</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="💧">💧</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🥗">🥗</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🛏️">🛏️</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="☀️">☀️</button>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:0.5rem;">' +
-        '<input type="checkbox" id="add-task-repeatable" style="accent-color:var(--primary);">' +
-        '<label for="add-task-repeatable" style="font-size:0.875rem;cursor:pointer;">可重复打卡（每天可多次完成）</label>' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="add-task-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="add-task-confirm">创建</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#add-task-cancel').addEventListener('click', () => overlay.remove());
-
-  let selectedIcon = '✅';
-  overlay.querySelectorAll('[data-icon]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedIcon = btn.dataset.icon;
-      overlay.querySelectorAll('[data-icon]').forEach(b => b.style.borderColor = '');
-      btn.style.borderColor = 'var(--primary)';
-    });
-  });
-  overlay.querySelector('[data-icon="✅"]').style.borderColor = 'var(--primary)';
-
-  overlay.querySelector('#add-task-name').focus();
-  overlay.querySelector('#add-task-confirm').addEventListener('click', function() {
-    const name = overlay.querySelector('#add-task-name').value.trim();
-    const points = parseInt(overlay.querySelector('#add-task-points').value, 10);
-    const desc = overlay.querySelector('#add-task-desc').value.trim();
-    const repeatable = overlay.querySelector('#add-task-repeatable').checked;
-    if (!name) { Toast.error('请输入任务名称'); return; }
-    if (!points || points < 1) { Toast.error('请输入有效积分'); return; }
-    Store.addTask({ name: name, points: points, description: desc, icon: selectedIcon, repeatable: repeatable });
-    overlay.remove();
-    Toast.success('任务已创建');
-  });
-}
-
-function showEditSpecialDialog(taskId, date) {
-  const tasks = Store.state.specialTasks[date] || [];
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">⚡</div>' +
-      '<div class="dialog-title">编辑突发任务</div>' +
-    '</div>' +
-    '<div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">任务名称</label>' +
-        '<input type="text" id="edit-special-name" value="' + task.name.replace(/"/g, '&quot;') + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">积分</label>' +
-        '<input type="number" id="edit-special-points" min="1" value="' + task.points + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="edit-special-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="edit-special-confirm">保存</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-special-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-special-confirm').addEventListener('click', function() {
-    const name = overlay.querySelector('#edit-special-name').value.trim();
-    const points = parseInt(overlay.querySelector('#edit-special-points').value, 10);
-    if (!name) { Toast.error('请输入任务名称'); return; }
-    if (!points || points < 1) { Toast.error('请输入有效积分'); return; }
-    task.name = name;
-    task.points = points;
-    Store._persist();
-    Store.notify();
-    overlay.remove();
-    Toast.success('突发任务已更新');
-  });
-}
-
-function showDeleteSpecialConfirm(taskId, date) {
-  const tasks = Store.state.specialTasks[date] || [];
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">🗑️</div>' +
-      '<div class="dialog-title">删除突发任务</div>' +
-      '<div class="dialog-desc">确定要删除「' + task.name + '」吗？</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="del-special-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="del-special-confirm" style="background:var(--destructive);">删除</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-special-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-special-confirm').addEventListener('click', function() {
-    Store.deleteSpecialTask(date, taskId);
-    overlay.remove();
-    Toast.success('突发任务已删除');
-  });
-}
-
-function showEditRewardDialog(rewardId) {
-  const reward = REWARDS.find(r => r.id === rewardId);
-  if (!reward) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">✏️</div>' +
-      '<div class="dialog-title">编辑奖励</div>' +
-    '</div>' +
-    '<div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1rem;">' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">奖励名称</label>' +
-        '<input type="text" id="edit-reward-name" value="' + reward.name.replace(/"/g, '&quot;') + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">积分</label>' +
-        '<input type="number" id="edit-reward-points" min="1" value="' + reward.points + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">描述</label>' +
-        '<input type="text" id="edit-reward-desc" value="' + (reward.description || '').replace(/"/g, '&quot;') + '" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="edit-reward-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="edit-reward-confirm">保存</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-reward-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#edit-reward-confirm').addEventListener('click', function() {
-    const name = overlay.querySelector('#edit-reward-name').value.trim();
-    const points = parseInt(overlay.querySelector('#edit-reward-points').value, 10);
-    const desc = overlay.querySelector('#edit-reward-desc').value.trim();
-    if (!name) { Toast.error('请输入奖励名称'); return; }
-    if (!points || points < 1) { Toast.error('请输入有效积分'); return; }
-    Store.updateReward(rewardId, { name: name, points: points, description: desc });
-    overlay.remove();
-    Toast.success('奖励已更新');
-  });
-}
-
-function showDeleteRewardConfirm(rewardId) {
-  const reward = REWARDS.find(r => r.id === rewardId);
-  if (!reward) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">🗑️</div>' +
-      '<div class="dialog-title">删除奖励</div>' +
-      '<div class="dialog-desc">确定要删除奖励「' + reward.name + '」吗？</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="del-reward-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="del-reward-confirm" style="background:var(--destructive);">删除</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-reward-cancel').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#del-reward-confirm').addEventListener('click', function() {
-    Store.deleteReward(rewardId);
-    overlay.remove();
-    Toast.success('奖励已删除');
-  });
-}
-
-function showAddRewardDialog() {
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.innerHTML = '<div class="dialog-content" onclick="event.stopPropagation()">' +
-    '<div class="dialog-header">' +
-      '<div class="dialog-icon">🎁</div>' +
-      '<div class="dialog-title">新建奖励</div>' +
-    '</div>' +
-    '<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">奖励名称</label>' +
-        '<input type="text" id="add-reward-name" placeholder="例如：看一集电视剧" maxlength="30" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">积分</label>' +
-        '<input type="number" id="add-reward-points" min="1" max="9999" value="30" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">描述</label>' +
-        '<input type="text" id="add-reward-desc" placeholder="可选，奖励说明" maxlength="50" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">单位</label>' +
-        '<input type="text" id="add-reward-unit" placeholder="次/小时/集/杯" value="次" maxlength="10" style="width:100%;padding:0.625rem 0.75rem;border:1.5px solid var(--border);border-radius:0.5rem;font-size:0.9375rem;outline:none;">' +
-      '</div>' +
-      '<div><label style="display:block;font-size:0.875rem;font-weight:600;margin-bottom:0.375rem;">图标</label>' +
-        '<div style="display:flex;gap:0.375rem;flex-wrap:wrap;">' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🎬">🎬</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="📺">📺</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🎮">🎮</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="📖">📖</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🧋">🧋</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🍜">🍜</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🍪">🍪</button>' +
-          '<button type="button" class="btn btn-icon btn-sm" data-icon="🛒">🛒</button>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem;">' +
-      '<button class="btn btn-outline" id="add-reward-cancel">取消</button>' +
-      '<button class="btn btn-primary" id="add-reward-confirm">创建</button>' +
-    '</div>' +
-  '</div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', () => overlay.remove());
-  overlay.querySelector('#add-reward-cancel').addEventListener('click', () => overlay.remove());
-
-  let selectedIcon = '🎬';
-  overlay.querySelectorAll('[data-icon]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedIcon = btn.dataset.icon;
-      overlay.querySelectorAll('[data-icon]').forEach(b => b.style.borderColor = '');
-      btn.style.borderColor = 'var(--primary)';
-    });
-  });
-  overlay.querySelector('[data-icon="🎬"]').style.borderColor = 'var(--primary)';
-
-  overlay.querySelector('#add-reward-name').focus();
-  overlay.querySelector('#add-reward-confirm').addEventListener('click', function() {
-    const name = overlay.querySelector('#add-reward-name').value.trim();
-    const points = parseInt(overlay.querySelector('#add-reward-points').value, 10);
-    const desc = overlay.querySelector('#add-reward-desc').value.trim();
-    const unit = overlay.querySelector('#add-reward-unit').value.trim() || '次';
-    if (!name) { Toast.error('请输入奖励名称'); return; }
-    if (!points || points < 1) { Toast.error('请输入有效积分'); return; }
-    Store.addReward({ name: name, points: points, description: desc, unit: unit, icon: selectedIcon });
-    overlay.remove();
-    Toast.success('奖励已创建');
   });
 }
 
