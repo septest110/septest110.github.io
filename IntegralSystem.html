@@ -940,7 +940,7 @@ const Cloud = {
       var { data: cloudTasks } = await sb.from('tasks').select('id').eq('user_id', uid);
       var localIds = Store.state.tasks.map(function(t) { return t.id; });
       var toDelete = (cloudTasks || []).filter(function(c) { return localIds.indexOf(c.id) === -1; });
-      toDelete.forEach(function(d) { sb.from('tasks').delete().eq('id', d.id); });
+      await Promise.all(toDelete.map(function(d) { return sb.from('tasks').delete().eq('id', d.id); }));
       // 2. upsert 全部本地任务
       var bulk = Store.state.tasks.map(function(t) {
         var row = { id: t.id, user_id: uid, name: t.name, points: t.points, description: t.description || '', icon: t.icon || '✅', repeatable: !!t.repeatable };
@@ -960,7 +960,7 @@ const Cloud = {
       var { data: cloudRewards } = await sb.from('rewards').select('id').eq('user_id', uid);
       var localIds = Store.state.rewards.map(function(r) { return r.id; });
       var toDelete = (cloudRewards || []).filter(function(c) { return localIds.indexOf(c.id) === -1; });
-      toDelete.forEach(function(d) { sb.from('rewards').delete().eq('id', d.id); });
+      await Promise.all(toDelete.map(function(d) { return sb.from('rewards').delete().eq('id', d.id); }));
       var bulk = Store.state.rewards.map(function(r) {
         return { id: r.id, user_id: uid, name: r.name, points: r.points, description: r.description || '', unit: r.unit || '次', icon: r.icon || '🎁' };
       });
