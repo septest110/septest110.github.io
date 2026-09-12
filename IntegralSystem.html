@@ -25,6 +25,71 @@
     --border: hsl(30 15% 88%);
     --destructive: hsl(0 70% 60%);
   }
+
+  html.dark body {
+    background: linear-gradient(135deg, hsl(220 20% 10%), hsl(220 18% 12%), hsl(220 22% 8%));
+  }
+  html.dark .account-bar {
+    background: rgb(30 35 48 / 0.7);
+  }
+  html.dark .hero-banner {
+    background: linear-gradient(135deg, hsl(120 25% 25%), hsl(220 20% 15%), hsl(30 15% 20%));
+  }
+  html.dark .card,
+  html.dark .dialog-content,
+  html.dark .toast-item,
+  html.dark .hero-banner .nav-btn,
+  html.dark .hero-banner .nav-btn:hover {
+    background: var(--card);
+  }
+
+  .hero-nav {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    display: flex;
+    gap: 0.4rem;
+  }
+  .hero-nav .nav-btn {
+    position: static;
+  }
+  html.dark .btn-outline {
+    background: var(--card);
+    color: var(--foreground);
+  }
+  html.dark .btn-outline:hover {
+    background: var(--muted);
+  }
+  html.dark .dialog-overlay {
+    background: rgb(0 0 0 / 0.7);
+  }
+  html.dark input, html.dark select, html.dark textarea {
+    background: var(--muted);
+    color: var(--foreground);
+    border-color: var(--border);
+  }
+
+  html.dark {
+    --background: hsl(220 20% 10%);
+    --foreground: hsl(40 15% 92%);
+    --card: hsl(220 18% 15%);
+    --primary: hsl(120 25% 50%);
+    --primary-foreground: hsl(0 0% 100%);
+    --primary-light: hsl(120 15% 25%);
+    --primary/10: hsl(120 25% 50% / 0.15);
+    --primary/20: hsl(120 25% 50% / 0.25);
+    --primary/40: hsl(120 25% 50% / 0.5);
+    --primary/60: hsl(120 25% 50% / 0.7);
+    --primary/80: hsl(120 25% 50% / 0.85);
+    --secondary: hsl(30 15% 25%);
+    --secondary-foreground: hsl(30 20% 85%);
+    --secondary-light: hsl(30 12% 20%);
+    --muted: hsl(220 15% 20%);
+    --muted-foreground: hsl(220 10% 60%);
+    --border: hsl(220 15% 25%);
+    --destructive: hsl(0 60% 55%);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", Roboto, sans-serif;
@@ -46,14 +111,14 @@
   .btn-primary { background: var(--primary); color: white; }
   .btn-primary:hover:not(:disabled) { filter: brightness(0.95); }
   .btn-primary:active:not(:disabled) { transform: scale(0.98); }
-  .btn-outline { background: white; border: 1px solid var(--border); color: var(--foreground); }
+  .btn-outline { background: var(--card); border: 1px solid var(--border); color: var(--foreground); }
   .btn-outline:hover:not(:disabled) { background: var(--muted); }
   .btn-ghost { background: transparent; color: var(--foreground); }
   .btn-ghost:hover:not(:disabled) { background: var(--muted); }
   .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; }
   .btn-sm { height: 2rem; font-size: 0.75rem; padding: 0 0.75rem; }
   .card {
-    background: white; border: 1px solid hsl(30 15% 88% / 0.6);
+    background: var(--card); border: 1px solid var(--border);
     border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
   }
   .card-header { padding: 1rem 1.25rem 0.75rem; }
@@ -93,7 +158,7 @@
     top: 1rem;
     background: rgba(255,255,255,0.7);
     color: var(--foreground);
-    border: 1px solid hsl(30 15% 88% / 0.8);
+    border: 1px solid var(--border);
     padding: 0.375rem 0.75rem;
     border-radius: 9999px;
     font-size: 0.75rem;
@@ -107,7 +172,7 @@
     backdrop-filter: blur(4px);
   }
   .hero-banner .nav-btn:hover {
-    background: white;
+    background: var(--card);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
   }
@@ -119,7 +184,7 @@
     padding: 0.5rem 0.75rem; margin-top: 0.75rem; border-radius: 9999px;
     background: rgb(255 255 255 / 0.7); backdrop-filter: blur(8px);
     font-size: 0.8rem; color: var(--muted-foreground);
-    border: 1px solid hsl(30 15% 88% / 0.6);
+    border: 1px solid var(--border);
   }
   .account-bar .acc-left { display: flex; align-items: center; gap: 0.5rem; }
   .account-bar .acc-right { display: flex; gap: 0.5rem; }
@@ -132,8 +197,8 @@
   .account-bar .acc-status.ok { color: var(--primary); }
   .account-bar .acc-status.warn { color: hsl(30 70% 50%); }
   .points-total-card {
-    background: linear-gradient(135deg, var(--primary/10), white, hsl(20 60% 85% / 0.1));
-    border: 1px solid hsl(30 15% 88% / 0.6); border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--primary/10), var(--card), hsl(20 60% 85% / 0.1));
+    border: 1px solid var(--border); border-radius: 0.75rem;
     padding: 2rem; text-align: center; margin-bottom: 1rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
   }
@@ -151,7 +216,7 @@
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .stat-card {
     display: flex; align-items: center; gap: 0.75rem; padding: 1rem;
-    background: white; border: 1px solid hsl(30 15% 88% / 0.6);
+    background: var(--card); border: 1px solid var(--border);
     border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
   }
   .stat-icon {
@@ -169,8 +234,8 @@
   }
   .date-nav {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 0.75rem; padding: 0.75rem; background: white;
-    border: 1px solid hsl(30 15% 88% / 0.6); border-radius: 0.75rem;
+    gap: 0.75rem; padding: 0.75rem; background: var(--card);
+    border: 1px solid var(--border); border-radius: 0.75rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
   }
   .date-info { text-align: center; flex: 1; min-width: 0; }
@@ -196,7 +261,7 @@
   .task-card {
     position: relative; display: flex; flex-direction: column; align-items: flex-start;
     gap: 0.5rem; padding: 1rem; border-radius: 0.75rem;
-    border: 1px solid hsl(30 15% 88% / 0.6); background: white;
+    border: 1px solid var(--border); background: var(--card);
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); cursor: pointer;
     text-align: left; font-family: inherit; transition: all 0.15s ease;
   }
@@ -275,7 +340,7 @@
     display: flex; flex-direction: column; align-items: center;
     gap: 0.5rem; padding: 1rem; border-radius: 0.75rem;
     border: 1px solid var(--secondary);
-    background: linear-gradient(135deg, hsl(20 60% 85% / 0.3), white);
+    background: linear-gradient(135deg, hsl(20 60% 85% / 0.3), var(--card));
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
     cursor: pointer; font-family: inherit; text-align: center;
     transition: all 0.15s ease;
@@ -372,7 +437,7 @@
   .history-item {
     display: flex; align-items: center; justify-content: space-between;
     gap: 0.75rem; padding: 0.75rem 0;
-    border-bottom: 1px solid hsl(30 15% 88% / 0.6);
+    border-bottom: 1px solid var(--border);
     animation: fadeInUp 0.3s ease-out both;
   }
   .history-item:last-child { border-bottom: none; }
@@ -420,7 +485,7 @@
     z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
   }
   .toast-item {
-    padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: white;
+    padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: var(--card);
     border: 1px solid var(--border); box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
     font-size: 0.875rem; font-weight: 500; color: var(--foreground);
     min-width: 200px; text-align: center; animation: toastIn 0.3s ease-out;
@@ -436,7 +501,7 @@
   }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .dialog-content {
-    background: white; border-radius: 1rem; padding: 1.5rem 1.75rem;
+    background: var(--card); border-radius: 1rem; padding: 1.5rem 1.75rem;
     max-width: 420px; width: 100%;
     box-shadow: 0 20px 40px rgb(0 0 0 / 0.15);
     animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1932,7 +1997,7 @@ let limitHint = '';
   const html = '<main>' +
     '<div class="container section">' +
       '<div class="hero-banner animate-fade-in-up">' +
-        '<a class="nav-btn" href="index.html">📅 课表</a>' +
+        '<div class="hero-nav"><a class="nav-btn" href="index.html">📅 课表</a><button class="nav-btn" id="theme-toggle">🌙 夜间</button></div>' +
         '<div class="hero-emoji">📒</div>' +
         '<h1 class="hero-title">我的积分手账本</h1>' +
         '<p class="hero-subtitle">每一点努力，都值得被奖励</p>' +
@@ -2325,7 +2390,7 @@ function showAuthDialog() {
       '<div style="font-size:0.8rem;color:var(--muted-foreground);margin-top:0.25rem;">登录后可多设备同步数据</div>' +
     '</div>' +
     '<div style="display:flex;gap:0.25rem;margin-bottom:1rem;background:var(--muted);border-radius:9999px;padding:4px;">' +
-      '<button class="atab" data-tab="login" style="flex:1;padding:0.5rem;border:none;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:0.875rem;font-weight:500;background:white;color:var(--foreground);box-shadow:0 1px 3px rgba(0,0,0,0.08);">登录</button>' +
+      '<button class="atab" data-tab="login" style="flex:1;padding:0.5rem;border:none;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:0.875rem;font-weight:500;background:var(--card);color:var(--foreground);box-shadow:0 1px 3px rgba(0,0,0,0.08);">登录</button>' +
       '<button class="atab" data-tab="register" style="flex:1;padding:0.5rem;border:none;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:0.875rem;font-weight:500;background:transparent;color:var(--muted-foreground);">注册</button>' +
     '</div>' +
     '<div id="auth-fields"></div>' +
@@ -2424,7 +2489,7 @@ function showAuthDialog() {
       overlay.querySelectorAll('.atab').forEach(function(b) {
         b.style.background = 'transparent'; b.style.color = 'var(--muted-foreground)';
       });
-      btn.style.background = 'white'; btn.style.color = 'var(--foreground)';
+      btn.style.background = 'var(--card)'; btn.style.color = 'var(--foreground)';
       showTab(btn.dataset.tab);
     });
   });
@@ -2745,7 +2810,35 @@ function renderDialogs() {
   if (!Store.state.onboarded) setTimeout(showOnboarding, 300);
 }
 
+
+// ============ 主题切换 ============
+const Theme = {
+  init() {
+    var saved = localStorage.getItem("lifepoints_theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+    this.updateToggle();
+  },
+  toggle() {
+    var isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("lifepoints_theme", isDark ? "dark" : "light");
+    this.updateToggle();
+  },
+  updateToggle() {
+    var btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    var isDark = document.documentElement.classList.contains("dark");
+    btn.textContent = isDark ? "☀️ 白天" : "🌙 夜间";
+  }
+};
+
+document.addEventListener("click", function(e) {
+  if (e.target.id === "theme-toggle") Theme.toggle();
+});
+
 // ============ 启动 ============
+Theme.init();
 Store.init();
 Store.subscribe(render);
 render();
