@@ -69,6 +69,24 @@
     border-color: var(--border);
   }
 
+  html.dark .special-task-card {
+    background: linear-gradient(135deg, hsl(38 70% 22%), hsl(38 65% 16%));
+    border-color: hsl(38 75% 55%);
+    color: hsl(40 30% 92%);
+  }
+  html.dark .special-task-card:hover {
+    box-shadow: 0 4px 12px hsl(38 75% 55% / 0.25);
+  }
+  html.dark .special-task-card.completed {
+    background: linear-gradient(135deg, hsl(155 45% 18%), hsl(155 40% 12%));
+    border-color: hsl(155 60% 50%);
+    color: hsl(155 30% 88%);
+  }
+  html.dark .special-badge {
+    background: hsl(38 80% 50%);
+    color: hsl(38 30% 12%);
+  }
+
   html.dark {
     --background: hsl(220 20% 10%);
     --foreground: hsl(40 15% 92%);
