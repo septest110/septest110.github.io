@@ -987,7 +987,9 @@ let periods = [
 ];
 
 let semesterStart = new Date(2026, 8, 1);
+semesterStart.setHours(0, 0, 0, 0);
 let firstWeekMonday = new Date(2026, 7, 31);
+firstWeekMonday.setHours(0, 0, 0, 0);
 let weekStartDates = [];
 let currentWeek = 1;
 let currentDayOffset = 0;
@@ -997,6 +999,7 @@ let currentDate = new Date();
 for (let __i = 0; __i < 20; __i++) {
   const __d = new Date(firstWeekMonday);
   __d.setDate(__d.getDate() + __i * 7);
+  __d.setHours(0, 0, 0, 0);
   weekStartDates.push(__d);
 }
 
@@ -1492,6 +1495,7 @@ function loadSavedSchedule() {
           if (key === 'semesterStart' || key === 'firstWeekMonday') {
             var parsed = parseDateValue(data[key]);
             if (!parsed) continue;
+            parsed.setHours(0, 0, 0, 0);
             if (key === 'semesterStart') {
               semesterStart.setTime(parsed.getTime());
             } else if (key === 'firstWeekMonday') {
@@ -1500,6 +1504,7 @@ function loadSavedSchedule() {
               for (let i = 0; i < 20; i++) {
                 const d = new Date(firstWeekMonday);
                 d.setDate(d.getDate() + i * 7);
+                d.setHours(0, 0, 0, 0);
                 weekStartDates.push(d);
               }
             }
@@ -1507,7 +1512,10 @@ function loadSavedSchedule() {
             window[key] = data[key];
           }
         }
-        return data.courses;
+        return data.courses.map(c => {
+           if (typeof c.day === 'number' && c.day === 7) c.day = 0;
+           return c;
+         });
       }
     } catch(e) {
       console.error('加载课表失败:', e);
@@ -1524,7 +1532,10 @@ function exportSchedule() {
     semesterStart: semesterStart.toISOString(),
     firstWeekMonday: firstWeekMonday.toISOString(),
     periods: periods,
-    courses: courses
+    courses: courses.map(c => ({
+      ...c,
+      day: c.day === 0 ? 7 : c.day
+    }))
   };
   const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1604,11 +1615,13 @@ function importSchedule(event) {
       if (data.firstWeekMonday) {
         var parsed = parseDateValue(data.firstWeekMonday);
         if (parsed) {
+          parsed.setHours(0, 0, 0, 0);
           firstWeekMonday.setTime(parsed.getTime());
           weekStartDates.length = 0;
           for (let i = 0; i < 20; i++) {
             const d = new Date(firstWeekMonday);
             d.setDate(d.getDate() + i * 7);
+            d.setHours(0, 0, 0, 0);
             weekStartDates.push(d);
           }
         }
@@ -1616,13 +1629,20 @@ function importSchedule(event) {
       if (data.semesterStart) {
         var parsed2 = parseDateValue(data.semesterStart);
         if (parsed2) {
+          parsed2.setHours(0, 0, 0, 0);
           semesterStart.setTime(parsed2.getTime());
         }
       }
       
-      // 更新课程数据
+      // 更新课程数据（day 转换：7=周日 转 0=周日）
       courses.length = 0;
-      data.courses.forEach(c => courses.push(c));
+      data.courses.forEach(c => {
+        if (typeof c.day === 'number' && c.day >= 1 && c.day <= 7) {
+          if (c.day === 7) c.day = 0;
+          else c.day = c.day;
+        }
+        courses.push(c);
+      });
       
       // 保存到localStorage
       const saveData = {
@@ -1665,7 +1685,9 @@ function resetSchedule() {
   
   // 恢复默认配置
   const defaultSemesterStart = new Date(2026, 8, 1);
+  defaultSemesterStart.setHours(0, 0, 0, 0);
   const defaultFirstWeekMonday = new Date(2026, 7, 31);
+  defaultFirstWeekMonday.setHours(0, 0, 0, 0);
   
   semesterStart.setTime(defaultSemesterStart.getTime());
   firstWeekMonday.setTime(defaultFirstWeekMonday.getTime());
@@ -1674,6 +1696,7 @@ function resetSchedule() {
   for (let i = 0; i < 20; i++) {
     const d = new Date(firstWeekMonday);
     d.setDate(d.getDate() + i * 7);
+    d.setHours(0, 0, 0, 0);
     weekStartDates.push(d);
   }
   
