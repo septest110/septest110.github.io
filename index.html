@@ -762,6 +762,11 @@ const Theme = {
   }
 };
 
+function getStorageKey() {
+  var uid = typeof Auth !== 'undefined' && Auth.getUserId ? Auth.getUserId() : null;
+  return uid ? 'customSchedule_' + uid : 'customSchedule_guest';
+}
+
 document.addEventListener('click', function(e) {
   if (e.target.id === 'theme-toggle') Theme.toggle();
 });
@@ -824,20 +829,49 @@ if (AUTH_CONFIG.enabled && _supabase) {
     if (event === 'SIGNED_IN' && session) {
       Cloud.syncFromCloud().then(function(data) {
         if (data) {
-localStorage.setItem('customSchedule', JSON.stringify(data));
-    saveToCloud();
-          courses.length = 0;
-          var saved = loadSavedSchedule();
-          if (saved && saved.length > 0) saved.forEach(function(c) { courses.push(c); });
-          var weekSelect = document.getElementById('weekSelect');
-          weekSelect.innerHTML = '';
-          initWeekSelector();
-          updateDateDisplay();
-          renderDayView();
-          renderWeekView();
-          renderCalendar();
+          localStorage.setItem(getStorageKey(), JSON.stringify(data));
         }
+        courses.length = 0;
+        var saved = loadSavedSchedule();
+        if (saved && saved.length > 0) saved.forEach(function(c) { courses.push(c); });
+        var weekSelect = document.getElementById('weekSelect');
+        weekSelect.innerHTML = '';
+        initWeekSelector();
+        updateDateDisplay();
+        renderDayView();
+        renderWeekView();
+        renderCalendar();
       });
+    } else if (event === 'SIGNED_OUT') {
+      localStorage.removeItem(getStorageKey());
+      semesterStart.setTime(new Date(2026, 8, 1).getTime());
+      semesterStart.setHours(0, 0, 0, 0);
+      firstWeekMonday.setTime(new Date(2026, 7, 31).getTime());
+      firstWeekMonday.setHours(0, 0, 0, 0);
+      weekStartDates.length = 0;
+      for (let i = 0; i < 20; i++) {
+        const d = new Date(firstWeekMonday);
+        d.setDate(d.getDate() + i * 7);
+        d.setHours(0, 0, 0, 0);
+        weekStartDates.push(d);
+      }
+      periods.length = 0;
+      periods.push(
+        { name: '第1大节', range: '08:00-09:40', time: '08:00-09:40', abcTime: '' },
+        { name: '第2大节', range: '10:00-11:40', time: '10:00-11:40', abcTime: '' },
+        { name: '第3大节', range: '13:30-15:10', time: '13:30-15:10', abcTime: '' },
+        { name: '第4大节', range: '15:30-17:10', time: '15:30-17:10', abcTime: '' },
+        { name: '第5大节', range: '18:30-20:10', time: '18:30-20:10', abcTime: '' },
+        { name: '第6大节', range: '20:30-22:10', time: '20:30-22:10', abcTime: '' }
+      );
+      courses.length = 0;
+      var weekSelect = document.getElementById('weekSelect');
+      weekSelect.innerHTML = '';
+      initWeekSelector();
+      updateDateDisplay();
+      renderDayView();
+      renderWeekView();
+      renderCalendar();
     }
   });
 }
@@ -1043,7 +1077,7 @@ function saveTitleInfo() {
   const title = '课表';
   const info = document.getElementById('editableInfo').value;
   let data = {};
-  const saved = localStorage.getItem('customSchedule');
+  const saved = localStorage.getItem(getStorageKey());
   if (saved) {
     try {
       data = JSON.parse(saved);
@@ -1053,7 +1087,7 @@ function saveTitleInfo() {
   }
   data.title = title;
   data.info = info;
-localStorage.setItem('customSchedule', JSON.stringify(data));
+localStorage.setItem(getStorageKey(), JSON.stringify(data));
     saveToCloud();
 }
 
@@ -1476,7 +1510,7 @@ const defaultCourses = [
 
 // 从localStorage加载已保存的课表
 function loadSavedSchedule() {
-  const saved = localStorage.getItem('customSchedule');
+  const saved = localStorage.getItem(getStorageKey());
   if (saved) {
     try {
       const cleanedSaved = saved
@@ -1508,6 +1542,24 @@ function loadSavedSchedule() {
                 weekStartDates.push(d);
               }
             }
+          } else if (key === 'periods' && Array.isArray(data[key])) {
+            periods.length = 0;
+            data[key].forEach(p => {
+              let timeStr = p.time || '';
+              let startEnd = p.range || '';
+              if (timeStr && startEnd && timeStr !== startEnd) {
+                const rangeStart = startEnd.split('-')[0];
+                const timeEnd = timeStr.split('-')[1];
+                if (rangeStart && timeEnd) {
+                  timeStr = `${rangeStart}-${timeEnd}`;
+                }
+              }
+              periods.push({
+                ...p,
+                time: timeStr,
+                range: timeStr
+              });
+            });
           } else if (window[key] !== undefined) {
             window[key] = data[key];
           }
@@ -1590,19 +1642,24 @@ function importSchedule(event) {
       if (Array.isArray(data.periods) && data.periods.length > 0) {
         periods.length = 0;
         data.periods.forEach((p, index) => {
-          // 兼容两种格式：start/end字符串 或 time字段
           let timeStr = p.time || '';
           let startEnd = '';
           if (!timeStr && p.start && p.end) {
             timeStr = `${p.start}-${p.end}`;
-            // 从名称中提取小节范围，如 "1-2节" -> range: "1-2小节"
             startEnd = p.name.replace(/节/g, '小节');
           } else {
             startEnd = p.range || `${p.start}-${p.end}`;
           }
+          if (timeStr && startEnd && timeStr !== startEnd) {
+            const rangeStart = startEnd.split('-')[0];
+            const timeEnd = timeStr.split('-')[1];
+            if (rangeStart && timeEnd) {
+              timeStr = `${rangeStart}-${timeEnd}`;
+            }
+          }
           periods.push({
             name: p.name || `第${index + 1}大节`,
-            range: startEnd,
+            range: startEnd !== timeStr ? timeStr : startEnd,
             time: timeStr,
             start: p.start && typeof p.start === 'number' ? p.start : (index * 2 + 1),
             end: p.end && typeof p.end === 'number' ? p.end : (index * 2 + 2),
@@ -1653,7 +1710,7 @@ function importSchedule(event) {
         periods: periods,
         courses: courses
       };
-localStorage.setItem('customSchedule', JSON.stringify(saveData));
+localStorage.setItem(getStorageKey(), JSON.stringify(saveData));
       saveToCloud();
       
       // 重新初始化视图
@@ -1681,7 +1738,7 @@ function resetSchedule() {
   if (!confirm('确定要恢复到默认课表吗？\n（所有自定义修改将丢失）')) {
     return;
   }
-  localStorage.removeItem('customSchedule');
+  localStorage.removeItem(getStorageKey());
   
   // 恢复默认配置
   const defaultSemesterStart = new Date(2026, 8, 1);
@@ -1757,7 +1814,7 @@ if (AUTH_CONFIG.enabled && _supabase) {
     if (loggedIn) {
       Cloud.syncFromCloud().then(function(cloudData) {
         if (cloudData) {
-          localStorage.setItem('customSchedule', JSON.stringify(cloudData));
+          localStorage.setItem(getStorageKey(), JSON.stringify(cloudData));
           courses.length = 0;
           var saved = loadSavedSchedule();
           if (saved && saved.length > 0) saved.forEach(function(c) { courses.push(c); });
