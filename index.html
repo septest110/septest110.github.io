@@ -1066,6 +1066,9 @@ function normalizePeriod(period) {
   if (period.subRanges && Array.isArray(period.subRanges) && period.subRanges.length >= 2) {
     period.subRanges = period.subRanges[0].split('-')[0] + '-' + period.subRanges[period.subRanges.length - 1].split('-')[1];
   }
+  if (!period.subRanges && period.range && period.time) {
+    period.subRanges = period.range.split('-')[0] + '-' + period.time.split('-')[1];
+  }
   return period;
 }
 
@@ -1174,7 +1177,8 @@ function renderDayView() {
       } else if (hasABCCourse && g.period.abcTime) {
         titleTimeSuffix = ` · ABC楼:${g.period.abcTime}`;
       }
-      html += `<div class="section-title">${g.period.name} · ${g.period.subRanges}${titleTimeSuffix}</div>`;
+      const fullRange = g.period.subRanges || ((g.period.range || '').split('-')[0] + '-' + (g.period.time || '').split('-')[1]);
+      html += `<div class="section-title">${g.period.name} · ${fullRange}${titleTimeSuffix}</div>`;
       g.courses.forEach(c => {
         html += `
           <div class="class-card">
@@ -1216,7 +1220,7 @@ function renderWeekView() {
   html += '<div class="time-column">';
   html += '<div class="time-header"></div>';
   periods.forEach(p => {
-    let timeText = p.subRanges || p.time;
+    let timeText = p.subRanges || ((p.range || '').split('-')[0] + '-' + (p.time || '').split('-')[1]);
     if (p.abcTime) {
       timeText = `${timeText}<br><span style="font-size:0.8em;color:#888">ABC楼:${p.abcTime}</span>`;
     }
@@ -1288,7 +1292,7 @@ function renderWeekView() {
       if (block.courses.length > 0) {
         block.courses.forEach(c => {
           const periodObj = periods[block.startPeriod - 1];
-          const fullTime = periodObj.subRanges || (periodObj.range + ' / ' + periodObj.time);
+          const fullTime = periodObj.subRanges || ((periodObj.range || '').split('-')[0] + '-' + (periodObj.time || '').split('-')[1]);
           const spanTag = block.span > 1 ? `<div class="span-tag">跨越 ${block.span} 大节</div>` : '';
           html += `<div class="class-block ${spanClass}" onclick="showCourseDetail('${c.name}','${c.room}','${fullTime}','${dayNames[dayOfWeek]}')">
             <div class="name">${c.name}</div>
