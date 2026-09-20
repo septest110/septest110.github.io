@@ -1062,54 +1062,10 @@ function isABCArea(room) {
   return /^[ABC]/i.test(room.trim()) && !room.match(/公共|实训|机房|网络/);
 }
 
-function getPeriodTime(period, room) {
-  if (!period) return { start: '', end: '' };
-  let time = period.time || '';
-  if (time) {
-    const parts = time.split('-');
-    return { start: parts[0] || '', end: parts[1] || '' };
+function normalizePeriod(period) {
+  if (period.subRanges && Array.isArray(period.subRanges) && period.subRanges.length >= 2) {
+    period.subRanges = period.subRanges[0].split('-')[0] + '-' + period.subRanges[period.subRanges.length - 1].split('-')[1];
   }
-  return { start: '', end: '' };
-}
-
-function ensurePeriodData(period) {
-  var toMin = function(s) { var p = (s || '').split(':').map(Number); return p.length === 2 ? p[0] * 60 + p[1] : 0; };
-  var toTime = function(min) { var h = Math.floor(min / 60); var m = min % 60; return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'); };
-
-  var sub = period.subRanges;
-  if (!sub || typeof sub !== 'string' || !sub.split('-').length === 2) {
-    if (period.range && period.time) {
-      sub = period.range.split('-')[0] + '-' + period.time.split('-')[1];
-    } else {
-      sub = period.range || period.time || '';
-    }
-    period.subRanges = sub;
-  }
-
-  if ((!period.range || period.range === period.time) && sub) {
-    var parts = sub.split('-');
-    if (parts.length === 2) {
-      var startMin = toMin(parts[0]);
-      var endMin = toMin(parts[1]);
-      var total = endMin - startMin;
-      if (total > 0) {
-        var rest = 10;
-        if (total > 120) rest = total - 80;
-        var subDur = Math.round((total - rest) / 2);
-        period.range = toTime(startMin) + '-' + toTime(startMin + subDur);
-        period.time = toTime(startMin + subDur + rest) + '-' + toTime(endMin);
-      }
-    }
-  }
-
-  if (!period.time && period.range && sub) {
-    var p = sub.split('-');
-    var rEnd = period.range.split('-')[1];
-    if (p.length === 2 && rEnd) {
-      period.time = toTime(toMin(rEnd) + 10) + '-' + p[1];
-    }
-  }
-
   return period;
 }
 
@@ -1210,7 +1166,6 @@ function renderDayView() {
   let html = '';
   groupedCourses.forEach(g => {
     if (g.courses.length > 0) {
-      ensurePeriodData(g.period);
       const hasABCCourse = g.courses.some(c => isABCArea(c.room));
       const hasNonABCCourse = g.courses.some(c => !isABCArea(c.room));
       let titleTimeSuffix = '';
@@ -1261,9 +1216,9 @@ function renderWeekView() {
   html += '<div class="time-column">';
   html += '<div class="time-header"></div>';
   periods.forEach(p => {
-    let timeText = p.time;
+    let timeText = p.subRanges || p.time;
     if (p.abcTime) {
-      timeText = `${p.time}<br><span style="font-size:0.8em;color:#888">ABC楼:${p.abcTime}</span>`;
+      timeText = `${timeText}<br><span style="font-size:0.8em;color:#888">ABC楼:${p.abcTime}</span>`;
     }
     html += `<div class="time-slot"><div class="period">${p.name}</div><div>${timeText}</div></div>`;
   });
@@ -1332,9 +1287,10 @@ function renderWeekView() {
       const spanClass = `span-${block.span}`;
       if (block.courses.length > 0) {
         block.courses.forEach(c => {
-          const courseTime = getPeriodTime(periods[block.startPeriod - 1], c.room);
+          const periodObj = periods[block.startPeriod - 1];
+          const fullTime = periodObj.subRanges || (periodObj.range + ' / ' + periodObj.time);
           const spanTag = block.span > 1 ? `<div class="span-tag">跨越 ${block.span} 大节</div>` : '';
-          html += `<div class="class-block ${spanClass}" onclick="showCourseDetail('${c.name}','${c.room}','${courseTime.start}-${courseTime.end}','${dayNames[dayOfWeek]}')">
+          html += `<div class="class-block ${spanClass}" onclick="showCourseDetail('${c.name}','${c.room}','${fullTime}','${dayNames[dayOfWeek]}')">
             <div class="name">${c.name}</div>
             <div class="room">${c.room}</div>
             ${spanTag}
@@ -1586,14 +1542,7 @@ function loadSavedSchedule() {
             periods.length = 0;
             data[key].forEach(p => {
               var period = { ...p };
-              if (!period.subRanges || typeof period.subRanges !== 'string') {
-                if (period.subRanges && Array.isArray(period.subRanges) && period.subRanges.length >= 2) {
-                  period.subRanges = period.subRanges[0].split('-')[0] + '-' + period.subRanges[period.subRanges.length - 1].split('-')[1];
-                } else {
-                  period.subRanges = period.range || period.time || '';
-                }
-              }
-              ensurePeriodData(period);
+              normalizePeriod(period);
               periods.push(period);
             });
           } else if (window[key] !== undefined) {
@@ -1680,15 +1629,12 @@ function importSchedule(event) {
         data.periods.forEach((p, index) => {
           var period = {
             name: p.name || ('第' + (index + 1) + '大节'),
-            range: p.range || p.time || '',
-            time: p.time || p.range || '',
+            range: p.range || '',
+            time: p.time || '',
             abcTime: p.abcTime || '',
             subRanges: p.subRanges || ''
           };
-          if (period.subRanges && Array.isArray(period.subRanges) && period.subRanges.length >= 2) {
-            period.subRanges = period.subRanges[0].split('-')[0] + '-' + period.subRanges[period.subRanges.length - 1].split('-')[1];
-          }
-          ensurePeriodData(period);
+          normalizePeriod(period);
           periods.push(period);
         });
       }
