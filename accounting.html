@@ -79,6 +79,39 @@ body {
 .view { display: none; }
 .view.active { display: block; }
 
+/* === Balance === */
+.balance {
+  padding: 18px 18px 16px;
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+.balance-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.balance-label { font-size: 13px; opacity: 0.9; }
+.balance-setting {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 8px; border-radius: 14px;
+}
+.balance-setting input {
+  width: 60px; background: transparent; border: none; outline: none;
+  color: white; font-size: 13px; text-align: right; font-weight: 600;
+}
+.balance-setting input::placeholder { color: rgba(255,255,255,0.5); }
+.balance-main {
+  display: flex; align-items: baseline; margin-bottom: 6px;
+}
+.balance-sign { font-size: 18px; margin-right: 2px; }
+.balance-value { font-size: 38px; font-weight: 800; letter-spacing: -1px; }
+.balance-value.negative { color: #ffe0e0; }
+.balance-sub {
+  font-size: 12px; opacity: 0.85;
+}
+.balance-sub b { font-weight: 600; }
+.balance-sep { margin: 0 8px; opacity: 0.5; }
+
 /* === Budget === */
 .budget { padding: 14px 16px; }
 .budget-row {
@@ -107,6 +140,23 @@ body {
 
 /* === Input Form === */
 .input-card { padding: 16px; }
+.type-toggle {
+  display: flex; background: #f0f0f0; border-radius: 24px; padding: 3px;
+  margin-bottom: 14px;
+}
+.type-btn {
+  flex: 1; padding: 8px 12px; border: none; border-radius: 22px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  background: transparent; color: #888; transition: all 0.15s;
+}
+.type-btn.expense.active {
+  background: linear-gradient(135deg, #e74c3c, #ff6b6b);
+  color: white; box-shadow: 0 2px 8px rgba(231,76,60,0.3);
+}
+.type-btn.income.active {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white; box-shadow: 0 2px 8px rgba(39,174,96,0.3);
+}
 .amount-row {
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 14px;
@@ -424,6 +474,29 @@ body {
   <!-- ===== VIEW 1: 记账 ===== -->
   <div class="view active" id="view-entry">
 
+    <!-- Total Balance -->
+    <div class="card">
+      <div class="balance">
+        <div class="balance-top">
+          <span class="balance-label">💰 总余额</span>
+          <div class="balance-setting">
+            <span style="font-size:12px;color:#888">初始</span>
+            <span style="color:#888">¥</span>
+            <input type="number" id="balanceInput" step="0.01" placeholder="0">
+          </div>
+        </div>
+        <div class="balance-main">
+          <span class="balance-sign" id="balanceSign">¥</span>
+          <span class="balance-value" id="balanceValue">0.00</span>
+        </div>
+        <div class="balance-sub">
+          <span>已支出 <b id="balanceSpent">¥0.00</b></span>
+          <span class="balance-sep">|</span>
+          <span>共 <b id="balanceDays">0</b> 天</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Budget -->
     <div class="card">
       <div class="budget">
@@ -445,6 +518,10 @@ body {
     <!-- Input -->
     <div class="card">
       <div class="input-card">
+        <div class="type-toggle">
+          <button class="type-btn expense active" id="typeExpense">💸 支出</button>
+          <button class="type-btn income" id="typeIncome">💰 收入</button>
+        </div>
         <div class="amount-row">
           <span class="yuan">¥</span>
           <input type="number" id="amountInput" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
@@ -549,6 +626,17 @@ body {
     { key: '礼物', emoji: '🎁' },
     { key: '其他', emoji: '📦' }
   ];
+  var INCOME_CATEGORIES = [
+    { key: '工资', emoji: '💼' },
+    { key: '兼职', emoji: '💻' },
+    { key: '红包', emoji: '🧧' },
+    { key: '投资收益', emoji: '📈' },
+    { key: '退款', emoji: '↩️' },
+    { key: '报销', emoji: '🧾' },
+    { key: '奖金', emoji: '🏆' },
+    { key: '其他收入', emoji: '💰' }
+  ];
+  var currentCategories = CATEGORIES;
 
   // ---------- 工具函数 ----------
   function fmtDate(d) {
@@ -570,6 +658,9 @@ body {
   function getCategory(key) {
     for (var i = 0; i < CATEGORIES.length; i++) {
       if (CATEGORIES[i].key === key) return CATEGORIES[i];
+    }
+    for (var j = 0; j < INCOME_CATEGORIES.length; j++) {
+      if (INCOME_CATEGORIES[j].key === key) return INCOME_CATEGORIES[j];
     }
     return CATEGORIES[CATEGORIES.length - 1];
   }
@@ -598,9 +689,19 @@ body {
   function loadStore() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        var s = JSON.parse(raw);
+        // 兼容旧数据：给没 type 的记录补 expense
+        if (s.records) {
+          for (var i = 0; i < s.records.length; i++) {
+            if (!s.records[i].type) s.records[i].type = 'expense';
+          }
+        }
+        if (s.balance === undefined || s.balance === null) s.balance = 0;
+        return s;
+      }
     } catch (e) { /* ignore */ }
-    return { records: [], budget: {} };
+    return { records: [], budget: {}, balance: 0 };
   }
   function saveStore() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); } catch (e) { /* ignore */ }
@@ -610,6 +711,7 @@ body {
   // ---------- 状态 ----------
   var currentDate = todayStr();
   var selectedCategory = null;
+  var isIncomeMode = false; // false=支出 true=收入
   var activeTab = 'entry';
 
   // ---------- DOM ----------
@@ -625,6 +727,11 @@ body {
   var $dayTotal = document.getElementById('dayTotal');
   var $recordDateLabel = document.getElementById('recordDateLabel');
   var $clearBtn = document.getElementById('clearBtn');
+  var $balanceInput = document.getElementById('balanceInput');
+  var $balanceValue = document.getElementById('balanceValue');
+  var $balanceSign = document.getElementById('balanceSign');
+  var $balanceSpent = document.getElementById('balanceSpent');
+  var $balanceDays = document.getElementById('balanceDays');
   var $toast = document.getElementById('toast');
   var $tabBtns = document.querySelectorAll('.tab-btn');
   var $views = document.querySelectorAll('.view');
@@ -646,6 +753,22 @@ body {
     var recs = getRecordsByDate(date);
     var s = 0;
     for (var i = 0; i < recs.length; i++) s += Number(recs[i].amount) || 0;
+    return s;
+  }
+  function sumExpenseByDate(date) {
+    var recs = getRecordsByDate(date);
+    var s = 0;
+    for (var i = 0; i < recs.length; i++) {
+      if (recs[i].type !== 'income') s += Number(recs[i].amount) || 0;
+    }
+    return s;
+  }
+  function sumIncomeByDate(date) {
+    var recs = getRecordsByDate(date);
+    var s = 0;
+    for (var i = 0; i < recs.length; i++) {
+      if (recs[i].type === 'income') s += Number(recs[i].amount) || 0;
+    }
     return s;
   }
   function getAllDates() {
@@ -676,7 +799,7 @@ body {
       $views[j].classList.toggle('active', $views[j].id === 'view-' + tab);
     }
     // 切到对应 Tab 再渲染，惰性计算
-    if (tab === 'entry') renderBudget(), renderList();
+    if (tab === 'entry') renderBalance(), renderBudget(), renderList();
     else if (tab === 'history') renderHistory();
     else if (tab === 'stats') renderStats();
   }
@@ -684,7 +807,7 @@ body {
   // ---------- 渲染分类 ----------
   function renderCategories() {
     $catGrid.innerHTML = '';
-    CATEGORIES.forEach(function(c) {
+    currentCategories.forEach(function(c) {
       var btn = document.createElement('button');
       btn.className = 'category-btn';
       btn.innerHTML = '<span class="emoji">' + c.emoji + '</span><span>' + c.key + '</span>';
@@ -699,10 +822,51 @@ body {
     });
   }
 
+  function toggleMode(mode) {
+    isIncomeMode = mode;
+    currentCategories = mode ? INCOME_CATEGORIES : CATEGORIES;
+    selectedCategory = null;
+    var $e = document.getElementById('typeExpense');
+    var $i = document.getElementById('typeIncome');
+    $e.classList.toggle('active', !mode);
+    $i.classList.toggle('active', mode);
+    renderCategories();
+  }
+
+  // ---------- 渲染总余额 ----------
+  function renderBalance() {
+    var init = Number(store.balance) || 0;
+    var totalExpense = 0, totalIncome = 0;
+    var recs = store.records || [];
+    for (var i = 0; i < recs.length; i++) {
+      var amt = Number(recs[i].amount) || 0;
+      if (recs[i].type === 'income') totalIncome += amt;
+      else totalExpense += amt;
+    }
+    var remaining = init + totalIncome - totalExpense;
+    var allDates = {};
+    for (var d = 0; d < recs.length; d++) allDates[recs[d].date] = true;
+    var dayCount = Object.keys(allDates).length;
+
+    $balanceInput.value = init || '';
+    $balanceValue.textContent = fmtMoney(Math.abs(remaining));
+    $balanceValue.classList.toggle('negative', remaining < 0);
+    $balanceSign.textContent = remaining < 0 ? '-¥' : '¥';
+    // 收支明细
+    if (totalIncome > 0 && totalExpense > 0) {
+      $balanceSpent.innerHTML = '<span style="color:#27ae60">+' + fmtMoney(totalIncome) + '</span> / <span style="color:#e74c3c">-' + fmtMoney(totalExpense) + '</span>';
+    } else if (totalIncome > 0) {
+      $balanceSpent.innerHTML = '<span style="color:#27ae60">+' + fmtMoney(totalIncome) + '</span>';
+    } else {
+      $balanceSpent.innerHTML = '<span style="color:#e74c3c">-' + fmtMoney(totalExpense) + '</span>';
+    }
+    $balanceDays.textContent = dayCount;
+  }
+
   // ---------- 渲染预算 ----------
   function renderBudget() {
     var budget = getBudget(currentDate);
-    var used = sumByDate(currentDate);
+    var used = sumExpenseByDate(currentDate);
     var remain = budget - used;
 
     $budget.value = budget || '';
@@ -731,7 +895,18 @@ body {
     recs.sort(function(a, b) { return (b._ts || 0) - (a._ts || 0); });
 
     $recordDateLabel.textContent = dateLabel(currentDate);
-    $dayTotal.textContent = '¥' + fmtMoney(sumByDate(currentDate));
+    var expSum = 0, incSum = 0;
+    for (var s = 0; s < recs.length; s++) {
+      if (recs[s].type === 'income') incSum += Number(recs[s].amount) || 0;
+      else expSum += Number(recs[s].amount) || 0;
+    }
+    if (incSum > 0 && expSum > 0) {
+      $dayTotal.innerHTML = '<span style="color:#27ae60">+¥' + fmtMoney(incSum) + '</span> / <span style="color:#e74c3c">-¥' + fmtMoney(expSum) + '</span>';
+    } else if (incSum > 0) {
+      $dayTotal.innerHTML = '<span style="color:#27ae60">+¥' + fmtMoney(incSum) + '</span>';
+    } else {
+      $dayTotal.textContent = '-¥' + fmtMoney(expSum);
+    }
 
     $list.innerHTML = '';
     if (recs.length === 0) {
@@ -744,15 +919,18 @@ body {
     for (var i = 0; i < recs.length; i++) {
       var r = recs[i];
       var cat = getCategory(r.category);
+      var isIncome = r.type === 'income';
+      var amountColor = isIncome ? 'color:#27ae60' : 'color:#e74c3c';
+      var amountText = (isIncome ? '+' : '-') + '¥' + fmtMoney(r.amount);
       var item = document.createElement('div');
       item.className = 'record-item';
       item.innerHTML =
-        '<div class="record-icon">' + cat.emoji + '</div>' +
+        '<div class="record-icon" style="background:' + (isIncome ? '#e8f8ef' : '#f0f9f7') + '">' + cat.emoji + '</div>' +
         '<div class="record-info">' +
-          '<div class="record-cat">' + escapeHtml(r.category || '其他') + '</div>' +
+          '<div class="record-cat">' + escapeHtml(r.category || '其他') + (isIncome ? ' <span style="font-size:11px;color:#27ae60">[收入]</span>' : '') + '</div>' +
           (r.purpose ? '<div class="record-purpose">' + escapeHtml(r.purpose) + '</div>' : '') +
         '</div>' +
-        '<div class="record-amount">-¥' + fmtMoney(r.amount) + '</div>' +
+        '<div class="record-amount" style="' + amountColor + '">' + amountText + '</div>' +
         '<button class="record-del" title="删除">✕</button>';
       (function(rec) {
         item.querySelector('.record-del').addEventListener('click', function() {
@@ -775,6 +953,7 @@ body {
       amount: Number(amount.toFixed(2)),
       category: selectedCategory,
       purpose: purpose,
+      type: isIncomeMode ? 'income' : 'expense',
       _ts: Date.now()
     };
     store.records.push(rec);
@@ -785,17 +964,21 @@ body {
     for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
     $amount.focus();
 
-    renderBudget(); renderList();
+    renderBalance(); renderBudget(); renderList();
 
-    var budget = getBudget(currentDate);
-    if (budget > 0 && sumByDate(currentDate) > budget) toast('⚠️ 已超支！');
-    else toast('✓ 已记录');
+    if (!isIncomeMode) {
+      var budget = getBudget(currentDate);
+      if (budget > 0 && sumExpenseByDate(currentDate) > budget) toast('⚠️ 已超支！');
+      else toast('✓ 支出已记录');
+    } else {
+      toast('✓ 收入已记录');
+    }
   }
 
   function deleteRecord(id) {
     store.records = store.records.filter(function(r) { return r.id !== id; });
     saveStore();
-    if (activeTab === 'entry') { renderBudget(); renderList(); }
+    if (activeTab === 'entry') { renderBalance(); renderBudget(); renderList(); }
     else if (activeTab === 'history') renderHistory();
     else if (activeTab === 'stats') renderStats();
     toast('已删除');
@@ -807,7 +990,7 @@ body {
     if (!confirm('确定清空 ' + currentDate + ' 的所有记录吗？')) return;
     store.records = store.records.filter(function(r) { return r.date !== currentDate; });
     saveStore();
-    renderBudget(); renderList();
+    renderBalance(); renderBudget(); renderList();
     toast('已清空');
   }
 
@@ -826,32 +1009,44 @@ body {
     }
 
     // 汇总信息
-    var totalSpend = 0, totalRecs = 0;
+    var totalExp = 0, totalInc = 0, totalRecs = 0;
     var recs = store.records || [];
-    for (var t = 0; t < recs.length; t++) { totalSpend += Number(recs[t].amount) || 0; totalRecs++; }
-    summary.textContent = '共 ' + dates.length + ' 天 · ' + totalRecs + ' 笔 · ¥' + fmtMoney(totalSpend);
+    for (var t = 0; t < recs.length; t++) {
+      var amt = Number(recs[t].amount) || 0; totalRecs++;
+      if (recs[t].type === 'income') totalInc += amt;
+      else totalExp += amt;
+    }
+    var sumParts = [];
+    if (totalInc > 0) sumParts.push('<span style="color:#27ae60">+' + fmtMoney(totalInc) + '</span>');
+    if (totalExp > 0) sumParts.push('<span style="color:#e74c3c">-' + fmtMoney(totalExp) + '</span>');
+    summary.innerHTML = '共 ' + dates.length + ' 天 · ' + totalRecs + ' 笔 · ' + sumParts.join(' / ');
 
     var html = '';
     for (var i = 0; i < dates.length; i++) {
       var d = dates[i];
       var dayRecs = getRecordsByDate(d);
-      var dayTotal = 0;
+      var dayExp = 0, dayInc = 0;
       var catCount = {};
       for (var j = 0; j < dayRecs.length; j++) {
         var amt = Number(dayRecs[j].amount) || 0;
-        dayTotal += amt;
+        if (dayRecs[j].type === 'income') dayInc += amt;
+        else dayExp += amt;
         var c = dayRecs[j].category || '其他';
         catCount[c] = (catCount[c] || 0) + amt;
       }
-      // Top 2 分类
       var topCats = Object.keys(catCount).sort(function(a, b) { return catCount[b] - catCount[a]; }).slice(0, 2);
       var subParts = topCats.map(function(c) { return getCategory(c).emoji + c; });
+
+      var dayTotalHtml = '';
+      if (dayInc > 0 && dayExp > 0) dayTotalHtml = '<span style="color:#27ae60">+' + fmtMoney(dayInc) + '</span> / <span style="color:#e74c3c">-' + fmtMoney(dayExp) + '</span>';
+      else if (dayInc > 0) dayTotalHtml = '<span style="color:#27ae60">+' + fmtMoney(dayInc) + '</span>';
+      else dayTotalHtml = '<span style="color:#e74c3c">-' + fmtMoney(dayExp) + '</span>';
 
       html += '<div class="day-group" data-date="' + d + '">';
       html += '<div class="day-header" data-act="toggle">';
       html += '<div class="day-date">' + dateLabel(d) + '</div>';
       html += '<div class="day-sub">' + subParts.join(' · ') + (subParts.length ? '' : ' 无分类') + '</div>';
-      html += '<div class="day-total">¥' + fmtMoney(dayTotal) + '</div>';
+      html += '<div class="day-total">' + dayTotalHtml + '</div>';
       html += '<div class="day-arrow">▶</div>';
       html += '</div>';
 
@@ -861,14 +1056,15 @@ body {
       for (var k = 0; k < dayRecs.length; k++) {
         var r = dayRecs[k];
         var cat = getCategory(r.category);
+        var isInc = r.type === 'income';
         html +=
           '<div class="record-item">' +
-            '<div class="record-icon">' + cat.emoji + '</div>' +
+            '<div class="record-icon" style="background:' + (isInc ? '#e8f8ef' : '#f0f9f7') + '">' + cat.emoji + '</div>' +
             '<div class="record-info">' +
               '<div class="record-cat">' + escapeHtml(r.category || '其他') + '</div>' +
               (r.purpose ? '<div class="record-purpose">' + escapeHtml(r.purpose) + '</div>' : '') +
             '</div>' +
-            '<div class="record-amount">-¥' + fmtMoney(r.amount) + '</div>' +
+            '<div class="record-amount" style="color:' + (isInc ? '#27ae60' : '#e74c3c') + '">' + (isInc ? '+' : '-') + '¥' + fmtMoney(r.amount) + '</div>' +
             '<button class="record-del" title="删除" data-del="' + r.id + '">✕</button>' +
           '</div>';
       }
@@ -916,39 +1112,53 @@ body {
     }
 
     // ---------- KPI ----------
-    var totalSpend = 0;
-    var catSum = {};
+    var totalExpense = 0, totalIncome = 0;
+    var catSumExp = {}, catSumInc = {};
     for (var i = 0; i < recs.length; i++) {
       var amt = Number(recs[i].amount) || 0;
-      totalSpend += amt;
       var c = recs[i].category || '其他';
-      catSum[c] = (catSum[c] || 0) + amt;
+      if (recs[i].type === 'income') {
+        totalIncome += amt;
+        catSumInc[c] = (catSumInc[c] || 0) + amt;
+      } else {
+        totalExpense += amt;
+        catSumExp[c] = (catSumExp[c] || 0) + amt;
+      }
     }
-    // 每日聚合
-    var datesMap = {};
+    // 每日聚合（支出用于趋势图）
+    var datesMapExp = {}, datesMapInc = {};
     for (var j = 0; j < recs.length; j++) {
       var d = recs[j].date;
-      datesMap[d] = (datesMap[d] || 0) + (Number(recs[j].amount) || 0);
+      var amt2 = Number(recs[j].amount) || 0;
+      if (recs[j].type === 'income') datesMapInc[d] = (datesMapInc[d] || 0) + amt2;
+      else datesMapExp[d] = (datesMapExp[d] || 0) + amt2;
     }
-    var dayCount = Object.keys(datesMap).length;
-    var dailyAvg = totalSpend / dayCount;
-    // 最大单笔
+    var allDates = {};
+    Object.keys(datesMapExp).forEach(function(k) { allDates[k] = true; });
+    Object.keys(datesMapInc).forEach(function(k) { allDates[k] = true; });
+    var dayCount = Object.keys(allDates).length;
+    var dailyAvg = totalExpense / Math.max(dayCount, 1);
+    // 最大单笔（不管收支，显示绝对值）
     var maxRec = null; var maxAmt = 0;
     for (var m = 0; m < recs.length; m++) {
       var a = Number(recs[m].amount) || 0;
       if (a > maxAmt) { maxAmt = a; maxRec = recs[m]; }
     }
-    // 最大单日
+    // 最大单日支出
     var maxDayAmt = 0; var maxDay = '';
-    Object.keys(datesMap).forEach(function(k) { if (datesMap[k] > maxDayAmt) { maxDayAmt = datesMap[k]; maxDay = k; } });
+    Object.keys(datesMapExp).forEach(function(k) { if (datesMapExp[k] > maxDayAmt) { maxDayAmt = datesMapExp[k]; maxDay = k; } });
+    if (maxDayAmt === 0 && Object.keys(datesMapInc).length > 0) {
+      var maxDayIncAmt = 0;
+      Object.keys(datesMapInc).forEach(function(k) { if (datesMapInc[k] > maxDayIncAmt) { maxDayIncAmt = datesMapInc[k]; maxDay = k; } });
+    }
 
     kpiGrid.innerHTML =
-      '<div class="kpi"><div class="kpi-label">💰 总支出</div><div class="kpi-value">¥' + fmtMoney(totalSpend) + '</div></div>' +
-      '<div class="kpi"><div class="kpi-label">📅 记录天数</div><div class="kpi-value">' + dayCount + ' 天</div></div>' +
-      '<div class="kpi"><div class="kpi-label">📊 日均消费</div><div class="kpi-value">¥' + fmtMoney(dailyAvg) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-label">� 总支出</div><div class="kpi-value" style="color:#e74c3c">¥' + fmtMoney(totalExpense) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-label">� 总收入</div><div class="kpi-value" style="color:#27ae60">¥' + fmtMoney(totalIncome) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-label">� 记录天数</div><div class="kpi-value">📊 ' + dayCount + ' 天</div></div>' +
       '<div class="kpi"><div class="kpi-label">🏆 最大单笔</div><div class="kpi-value red">¥' + fmtMoney(maxAmt) + '</div></div>';
 
-    // ---------- 每日趋势 (近14天) ----------
+    // ---------- 每日趋势 (近14天) —— 显示支出 ----------
     var today = new Date();
     var barsHtml = ''; var labelsHtml = '';
     var maxBarVal = 0;
@@ -956,7 +1166,7 @@ body {
     for (var k = 13; k >= 0; k--) {
       var dd = new Date(today); dd.setDate(dd.getDate() - k);
       var ds = fmtDate(dd);
-      var v = datesMap[ds] || 0;
+      var v = datesMapExp[ds] || 0;
       days.push({ date: ds, val: v });
       if (v > maxBarVal) maxBarVal = v;
     }
@@ -970,8 +1180,7 @@ body {
         var day = days[bi];
         var pct = maxBarVal > 0 ? (day.val / maxBarVal) * 100 : 0;
         var isEmpty = day.val === 0;
-        barsHtml += '<div class="bar' + (isEmpty ? ' empty' : '') + '" style="height:' + Math.max(pct, 2) + '%" title="' + day.date + ' ¥' + fmtMoney(day.val) + '"></div>';
-        // 只显示部分标签避免拥挤
+        barsHtml += '<div class="bar' + (isEmpty ? ' empty' : '') + '" style="height:' + Math.max(pct, 2) + '%" title="' + day.date + ' 支出 ¥' + fmtMoney(day.val) + '"></div>';
         if (bi === 0 || bi === 6 || bi === 13) {
           labelsHtml += '<div class="bar-label">' + day.date.slice(5) + '</div>';
         } else {
@@ -982,22 +1191,22 @@ body {
       barLabels.innerHTML = labelsHtml;
     }
 
-    // ---------- 分类占比 (Top 10) ----------
-    var catKeys = Object.keys(catSum).sort(function(a, b) { return catSum[b] - catSum[a]; });
+    // ---------- 分类占比 (支出 Top 10) ----------
+    var catKeys = Object.keys(catSumExp).sort(function(a, b) { return catSumExp[b] - catSumExp[a]; });
     catKeys = catKeys.slice(0, 10);
-    catTotalSpan.textContent = '总计 ¥' + fmtMoney(totalSpend);
+    catTotalSpan.textContent = '支出总计 ¥' + fmtMoney(totalExpense);
     var catHtml = '';
     for (var ci = 0; ci < catKeys.length; ci++) {
       var key = catKeys[ci];
       var cEmoji = getCategory(key).emoji;
-      var cPct = totalSpend > 0 ? (catSum[key] / totalSpend) * 100 : 0;
+      var cPct = totalExpense > 0 ? (catSumExp[key] / totalExpense) * 100 : 0;
       catHtml +=
         '<div class="cat-bar-row">' +
           '<div class="cat-bar-emoji">' + cEmoji + '</div>' +
           '<div class="cat-bar-info">' +
             '<div class="cat-bar-top">' +
               '<span class="cat-bar-name">' + escapeHtml(key) + '</span>' +
-              '<span class="cat-bar-amt">¥' + fmtMoney(catSum[key]) + ' · ' + cPct.toFixed(1) + '%</span>' +
+              '<span class="cat-bar-amt">¥' + fmtMoney(catSumExp[key]) + ' · ' + cPct.toFixed(1) + '%</span>' +
             '</div>' +
             '<div class="cat-bar-track"><div class="cat-bar-fill" style="width:' + cPct + '%"></div></div>' +
           '</div>' +
@@ -1010,37 +1219,38 @@ body {
 
     // 1. 高频分类
     var topCat = catKeys[0];
-    if (topCat && catSum[topCat] / totalSpend > 0.4) {
+    if (topCat && catSumExp[topCat] / Math.max(totalExpense, 0.01) > 0.4) {
       insights.push({
         type: 'warn', emoji: '⚠️',
-        text: '近段时间「' + topCat + '」占了总支出的 ' + (catSum[topCat] / totalSpend * 100).toFixed(0) + '%，有点集中哦，可以看看是不是能省一点～'
+        text: '近段时间「' + topCat + '」占了总支出的 ' + (catSumExp[topCat] / Math.max(totalExpense, 0.01) * 100).toFixed(0) + '%，有点集中哦，可以看看是不是能省一点～'
       });
     } else if (topCat) {
       insights.push({
         type: 'info', emoji: '🏆',
-        text: '最常消费的是「' + topCat + '」（¥' + fmtMoney(catSum[topCat]) + '）'
+        text: '最常消费的是「' + topCat + '」（¥' + fmtMoney(catSumExp[topCat]) + '）'
       });
     }
 
     // 2. 最大单笔
     if (maxRec) {
       var maxCat = maxRec.category || '其他';
+      var isMaxIncome = maxRec.type === 'income';
       insights.push({
-        type: 'info', emoji: '💸',
-        text: '最大单笔是 ' + dateLabel(maxRec.date) + ' 的「' + maxCat + '」' + (maxRec.purpose ? '·' + maxRec.purpose : '') + '，¥' + fmtMoney(maxAmt)
+        type: 'info', emoji: isMaxIncome ? '💰' : '💸',
+        text: '最大' + (isMaxIncome ? '收入' : '支出') + '是 ' + dateLabel(maxRec.date) + ' 的「' + maxCat + '」' + (maxRec.purpose ? '·' + maxRec.purpose : '') + '，' + (isMaxIncome ? '+' : '-') + '¥' + fmtMoney(maxAmt)
       });
     }
 
     // 3. 最大单日
-    if (maxDay) {
+    if (maxDay && totalExpense > 0) {
       insights.push({
         type: 'hint', emoji: '📅',
-        text: '花钱最多的一天是 ' + dateLabel(maxDay) + '，¥' + fmtMoney(maxDayAmt)
+        text: '支出最多的一天是 ' + dateLabel(maxDay) + '，¥' + fmtMoney(maxDayAmt)
       });
     }
 
     // 4. 连续记账天数
-    var sortedDates = Object.keys(datesMap).sort();
+    var sortedDates = Object.keys(allDates).sort();
     var streak = 1;
     for (var si = 1; si < sortedDates.length; si++) {
       var prev = new Date(sortedDates[si - 1]); prev.setDate(prev.getDate() + 1);
@@ -1082,6 +1292,10 @@ body {
 
   // ---------- 事件绑定 ----------
   function bindEvents() {
+    // 收支切换
+    document.getElementById('typeExpense').addEventListener('click', function() { toggleMode(false); });
+    document.getElementById('typeIncome').addEventListener('click', function() { toggleMode(true); });
+
     // Tab 切换
     for (var i = 0; i < $tabBtns.length; i++) {
       $tabBtns[i].addEventListener('click', function() { switchTab(this.dataset.tab); });
@@ -1089,13 +1303,21 @@ body {
 
     $date.addEventListener('change', function() {
       var v = $date.value;
-      if (v) { currentDate = v; renderBudget(); renderList(); }
+      if (v) { currentDate = v; renderBalance(); renderBudget(); renderList(); }
     });
 
     $budget.addEventListener('change', function() {
       setBudget(currentDate, $budget.value);
       renderBudget();
       toast('预算已更新');
+    });
+
+    $balanceInput.addEventListener('change', function() {
+      var v = Number($balanceInput.value) || 0;
+      store.balance = v;
+      saveStore();
+      renderBalance();
+      toast('余额已更新');
     });
 
     $addBtn.addEventListener('click', addRecord);
@@ -1118,6 +1340,7 @@ body {
   function init() {
     $date.value = currentDate;
     renderCategories();
+    renderBalance();
     renderBudget();
     renderList();
     bindEvents();
