@@ -409,7 +409,7 @@ body {
       </div>
     </div>
     <div class="account-right">
-      <a class="btn-home" href="portal.html">🏠 首页</a>
+      <a class="btn-home" href="index.html">🏠 首页</a>
       <button class="btn-login-small" id="loginBtn">🔑 登录</button>
     </div>
   </div>
@@ -608,7 +608,7 @@ body {
   var store = loadStore();
 
   // ---------- 状态 ----------
-  var currentDate = tomorrowStr();
+  var currentDate = todayStr();
   var selectedCategory = null;
   var activeTab = 'entry';
 
@@ -730,7 +730,7 @@ body {
     var recs = getRecordsByDate(currentDate);
     recs.sort(function(a, b) { return (b._ts || 0) - (a._ts || 0); });
 
-    $recordDateLabel.textContent = dateLabel(currentDate) + '花销';
+    $recordDateLabel.textContent = dateLabel(currentDate);
     $dayTotal.textContent = '¥' + fmtMoney(sumByDate(currentDate));
 
     $list.innerHTML = '';
